@@ -6,7 +6,7 @@
  *   文件名称：probe_tool_handler.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 12时48分07秒
- *   修改日期：2021年11月02日 星期二 14时55分54秒
+ *   修改日期：2022年02月10日 星期四 19时58分06秒
  *   描    述：
  *
  *================================================================*/
@@ -19,7 +19,11 @@
 
 #include "flash.h"
 #include "iap.h"
+#include "app.h"
+#include "ftp_client.h"
 #include "channels.h"
+#include "card_reader.h"
+#include "power_manager.h"
 
 #include "sal_hook.h"
 
@@ -31,36 +35,10 @@ static void fn1(request_t *request)
 	probe_server_chunk_sendto(request->payload.fn, (void *)0x8000000, 512);
 }
 
+#include "test_event.h"
 static void fn2(request_t *request)
 {
-	int ret;
-	char *content = (char *)(request + 1);
-	channels_config_t *channels_config = get_channels_config(0);
-	channels_info_t *channels_info;
-	int fn;
-	int channel;
-	int type;
-	int catched;
-
-	if(channels_config == NULL) {
-		return;
-	}
-
-	channels_info = get_or_alloc_channels_info(channels_config);
-
-	if(channels_info == NULL) {
-		return;
-	}
-
-	ret = sscanf(content, "%d %d %d%n", &fn, &channel, &type, &catched);
-
-	if(ret == 3) {
-		debug("fn:%d, channel:%d, type:%d!", fn, channel, type);
-	} else {
-		_hexdump("fn2 content", content, request->header.data_size);
-	}
-
-	start_stop_channel(channels_info, channel, type);
+	try_get_test_event();
 }
 
 static void fn3(request_t *request)
@@ -283,54 +261,46 @@ static void fn5(request_t *request)
 	}
 }
 
-static void fn6(request_t *request)
-{
-	start_dump_channels_stats();
-}
-
+#include "test_storage.h"
 static void fn7(request_t *request)
 {
-	int ret;
 	char *content = (char *)(request + 1);
-	channels_config_t *channels_config = get_channels_config(0);
-	channels_info_t *channels_info;
-	channel_info_t *channel_info;
 	int fn;
-	int channel;
-	int voltage;
-	int current;
-	int state;
+	int op;
+	int start;
+	int size;
 	int catched;
-	uint32_t ticks = osKernelSysTick();
+	int ret;
 
-	if(channels_config == NULL) {
-		return;
+	ret = sscanf(content, "%d %d %d %d%n", &fn, &op, &start, &size, &catched);
+
+	if(ret == 4) {
+		app_info_t *app_info = get_app_info();
+
+		OS_ASSERT(app_info->storage_info != NULL);
+
+		switch(op) {
+			case 0: {
+				test_storage_check(app_info->storage_info, start, size);
+			}
+			break;
+
+			case 1: {
+				test_storage_read(app_info->storage_info, start, size);
+			}
+			break;
+
+			case 2: {
+				test_storage_write(app_info->storage_info, start, size);
+			}
+			break;
+
+			default: {
+			}
+			break;
+		}
+
 	}
-
-	channels_info = get_or_alloc_channels_info(channels_config);
-
-	if(channels_info == NULL) {
-		return;
-	}
-
-	ret = sscanf(content, "%d %d %d %d %d%n", &fn, &channel, &voltage, &current, &state, &catched);
-
-	if(ret == 5) {
-		debug("fn:%d, channel:%d, voltage:%d, current:%d, state:%d!", fn, channel, voltage, current, state);
-	} else {
-		_hexdump("fn7 content", content, request->header.data_size);
-	}
-
-	if(channel >= channels_info->channel_number) {
-		return;
-	}
-
-	channel_info = channels_info->channel_info + channel;
-
-	channel_info->status.require_output_voltage = voltage;
-	channel_info->status.require_output_current = current;
-	channel_info->status.require_output_stamp = ticks;
-	channel_info->status.require_work_state = state;
 }
 
 static void fn8(request_t *request)
@@ -341,59 +311,150 @@ static void fn9(request_t *request)
 {
 }
 
-void set_connect_enable(uint8_t enable);
-uint8_t get_connect_enable(void);
+//#include "test_https.h"
+//void set_connect_enable(uint8_t enable);
 static void fn10(request_t *request)
 {
+	//char *url = "https://httpbin.org/get";
+	//char *url = "ws://192.168.41.2:8080/ocpp/";
+	//char *url = "ws://47.244.218.210:8080/OCPP/echoSocket/13623";
+	//char *url = "wss://35.201.125.176:433/SSECHINAEVSE";
+	//char *url = "https://216.58.199.110";
+	//char *url = "wss://ocpp-16-json.dev-plugitcloud.com/SSECHINAEVSE";
+	//char *url = "wss://iot-ebus-ocpp-v16-server-test.azurewebsites.net/ws/test123";
+	//test_https(url);
+	//set_connect_enable(1);
 }
 
-#include "modbus_addr_handler.h"
-#include "modbus_slave_txrx.h"
-static void fn11(request_t *request)
+//12 10.42.0.1 2121 /user.mk anonymous
+//12 10.42.0.1 2121 /user.mk user pass
+//12 ftp.gnu.org 21 /gnu/tar/tar-1.32.tar.gz anonymous
+//12 ftp.sjtu.edu.cn 21 /centos/2/centos2-scripts-v1.tar anonymous
+static void fn12(request_t *request)
 {
-	int ret;
 	char *content = (char *)(request + 1);
 	int fn;
-	int addr;
-	int value;
-	int op;
 	int catched;
-	channels_config_t *channels_config = get_channels_config(0);
-	channels_info_t *channels_info;
-	modbus_data_ctx_t modbus_data_ctx;
+	int ret;
+	ftp_server_path_t *ftp_server_path = (ftp_server_path_t *)os_alloc(sizeof(ftp_server_path_t));
 
-	if(channels_config == NULL) {
+	if(ftp_server_path == NULL) {
 		return;
 	}
 
-	channels_info = get_or_alloc_channels_info(channels_config);
+	memset(ftp_server_path, 0, sizeof(ftp_server_path_t));
 
-	if(channels_info == NULL) {
-		return;
+	ret = sscanf(content, "%d %s %s %s %s %s %n", &fn, ftp_server_path->host, ftp_server_path->port, ftp_server_path->path, ftp_server_path->user, ftp_server_path->password, &catched);
+
+	debug("ret:%d", ret);
+
+	if((ret == 6) || (ret == 5)) {
+		debug("server host:\'%s\', server port:\'%s\', path\'%s\', user:\'%s\', password\'%s\'", ftp_server_path->host, ftp_server_path->port, ftp_server_path->path, ftp_server_path->user, ftp_server_path->password);
+		request_ftp_client_download(ftp_server_path->host, ftp_server_path->port, ftp_server_path->path, ftp_server_path->user, ftp_server_path->password, FTP_CLIENT_ACTION_DOWNLOAD, NULL, NULL);
 	}
 
-	ret = sscanf(content, "%d %d %d %d%n", &fn, &addr, &value, &op, &catched);
+	os_free(ftp_server_path);
+}
 
-	if(ret == 4) {
-		debug("fn:%d, addr:%d, value:%d, op:%d!", fn, addr, value, op);
-	} else {
-		_hexdump("fn11 content", content, request->header.data_size);
-		return;
+static void fn13(request_t *request)
+{
+	char *content = (char *)(request + 1);
+	int fn;
+	int catched;
+	int ret;
+	struct tm tm;
+	time_t ts;
+
+	ret = sscanf(content, "%d %04d%02d%02d%02d%02d%02d %n",
+	             &fn,
+	             &tm.tm_year,
+	             &tm.tm_mon,
+	             &tm.tm_mday,
+	             &tm.tm_hour,
+	             &tm.tm_min,
+	             &tm.tm_sec,
+	             &catched);
+	debug("ret:%d", ret);
+	tm.tm_year -= 1900;
+	tm.tm_mon -= 1;
+	ts = mktime(&tm);
+
+	if(ret == 7) {
+		if(set_time(ts) == 0) {
+			debug("set time successful!");
+		} else {
+			debug("set time failed!");
+		}
 	}
 
-	modbus_data_ctx.ctx = NULL;
-	modbus_data_ctx.action = op;
-	modbus_data_ctx.addr = addr;
-	modbus_data_ctx.value = value;
-	channels_modbus_data_action(channels_info, &modbus_data_ctx);
+	ts = get_time();
+	tm = *localtime(&ts);
+	debug("tm %04d-%02d-%02d %02d:%02d:%02d",
+	      tm.tm_year + 1900,
+	      tm.tm_mon + 1,
+	      tm.tm_mday,
+	      tm.tm_hour,
+	      tm.tm_min,
+	      tm.tm_sec);
+}
 
-	debug("op:%s, addr:%s(%d), value:%d",
-	      (modbus_data_ctx.action == MODBUS_DATA_ACTION_GET) ? "get" :
-	      (modbus_data_ctx.action == MODBUS_DATA_ACTION_SET) ? "set" :
-	      "unknow",
-	      get_modbus_slave_addr_des(modbus_data_ctx.addr),
-	      modbus_data_ctx.addr,
-	      modbus_data_ctx.value);
+static void fn14(request_t *request)
+{
+	char *content = (char *)(request + 1);
+	int fn;
+	int channel_id;
+	int type;//channel_event_type_t
+	int catched;
+	int ret;
+
+	ret = sscanf(content, "%d %d %d %n",
+	             &fn,
+	             &channel_id,
+	             &type,
+	             &catched);
+	debug("ret:%d", ret);
+
+	if(ret == 3) {
+		channel_event_t *channel_event = os_calloc(1, sizeof(channel_event_t));
+		channels_event_t *channels_event = os_calloc(1, sizeof(channels_event_t));
+		channels_info_t *channels_info = get_channels();
+		channel_info_t *channel_info = channels_info->channel_info + channel_id;
+
+		OS_ASSERT(channel_event != NULL);
+		OS_ASSERT(channels_event != NULL);
+
+		switch(type) {
+			case CHANNEL_EVENT_TYPE_START_CHANNEL: {
+				channel_info->channel_event_start_display.charge_mode = CHANNEL_RECORD_CHARGE_MODE_UNLIMIT;
+				channel_info->channel_event_start_display.start_reason = CHANNEL_RECORD_ITEM_START_REASON_BMS;
+			}
+			break;
+
+			case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
+				channel_info->channel_event_stop.stop_reason = CHANNEL_RECORD_ITEM_STOP_REASON_MANUAL;
+			}
+			break;
+
+			default: {
+			}
+			break;
+		}
+
+		channel_event->channel_id = channel_id;
+		channel_event->type = type;
+		channel_event->ctx = &channel_info->channel_event_start_display;
+
+		channels_event->type = CHANNELS_EVENT_CHANNEL;
+		channels_event->event = channel_event;
+
+		if(send_channels_event(channels_info, channels_event, 100) != 0) {
+			os_free(channels_event->event);
+			os_free(channels_event);
+			debug("send channel %d type %d failed!", channel_id, type);
+		} else {
+			debug("send channel %d type %d successful!", channel_id, type);
+		}
+	}
 }
 
 static void fn17(request_t *request)
@@ -413,19 +474,26 @@ static void fn17(request_t *request)
 	}
 }
 
+static void fn18(request_t *request)
+{
+	start_dump_channels_stats();
+}
+
 static server_item_t server_map[] = {
 	{1, fn1},
 	{2, fn2},
 	{3, fn3},
 	{4, fn4},
 	{5, fn5},
-	{6, fn6},
 	{7, fn7},
 	{8, fn8},
 	{9, fn9},
 	{10, fn10},
-	{11, fn11},
+	{12, fn12},
+	{13, fn13},
+	{14, fn14},
 	{17, fn17},
+	{18, fn18},
 };
 
 server_map_info_t server_map_info = {

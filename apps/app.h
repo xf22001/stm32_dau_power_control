@@ -6,7 +6,7 @@
  *   文件名称：app.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月11日 星期五 16时56分29秒
- *   修改日期：2021年12月06日 星期一 10时11分46秒
+ *   修改日期：2022年01月12日 星期三 10时33分18秒
  *   描    述：
  *
  *================================================================*/
@@ -30,7 +30,7 @@ extern "C"
 
 #define VER_MAJOR 0
 #define VER_MINOR 0
-#define VER_REV 3
+#define VER_REV 0
 #define VER_BUILD 0
 
 #pragma pack(push, 1)
@@ -50,6 +50,7 @@ typedef struct {
 
 	uint8_t upgrade_enable;
 	uint8_t reset_config;
+	char tz;
 } mechine_info_t;
 
 typedef struct {

@@ -6,11 +6,10 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2021年10月28日 星期四 14时58分44秒
+#   修改日期：2022年02月10日 星期四 19时40分43秒
 #   描    述：
 #
 #================================================================
-
 include config.mk
 
 ifndef_any_of = $(filter undefined,$(foreach v,$(1),$(origin $(addprefix CONFIG_,$(v)))))
@@ -22,8 +21,11 @@ USER_C_INCLUDES += -Iapps/modules/os
 USER_C_INCLUDES += -Iapps/modules/drivers
 USER_C_INCLUDES += -Iapps/modules/hardware
 USER_C_INCLUDES += -Iapps/modules/app
+USER_C_INCLUDES += -Iapps/modules/app/charger
 USER_C_INCLUDES += -Iapps/modules/app/power_modules
+USER_C_INCLUDES += -Iapps/modules/app/ftpd
 USER_C_INCLUDES += -Iapps/modules/app/vfs_disk
+USER_C_INCLUDES += -Iapps/modules/app/net_client
 USER_C_INCLUDES += -Iapps/modules/tests
 
 C_INCLUDES += $(USER_C_INCLUDES)
@@ -37,33 +39,48 @@ USER_C_SOURCES += apps/probe_tool_handler.c
 USER_C_SOURCES += apps/channels_config.c
 USER_C_SOURCES += apps/can_config.c
 USER_C_SOURCES += apps/storage_config.c
-ifneq ($(call ifdef_any_of,PSEUDO_ENV),)
-USER_C_SOURCES += apps/channels_communication_pseudo.c
-USER_C_SOURCES += apps/relay_boards_communication_pseudo.c
-else
-USER_C_SOURCES += apps/channels_communication.c
-USER_C_SOURCES += apps/relay_boards_communication.c
-endif
-USER_C_SOURCES += apps/modbus_addr_handler.c
+USER_C_SOURCES += apps/gpio_map.c
+USER_C_SOURCES += apps/channels_addr_handler.c
 USER_C_SOURCES += apps/display_cache.c
+USER_C_SOURCES += apps/channels_notify_voice.c
+USER_C_SOURCES += apps/power_manager_group_policy_handler.c
 USER_C_SOURCES += apps/channels.c
+USER_C_SOURCES += apps/channel.c
+USER_C_SOURCES += apps/charger.c
+ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_LOCAL),)
+USER_C_SOURCES += apps/channel_handler_proxy_local.c
+USER_C_SOURCES += apps/channels_comm_proxy_local.c
+endif
+USER_C_SOURCES += apps/channels_comm_proxy.c
 
 USER_C_SOURCES += apps/modules/app/config_utils.c
 USER_C_SOURCES += apps/modules/app/poll_loop.c
 USER_C_SOURCES += apps/modules/app/request.c
 USER_C_SOURCES += apps/modules/app/probe_tool.c
 USER_C_SOURCES += apps/modules/app/uart_debug.c
+USER_C_SOURCES += apps/modules/app/file_log.c
+USER_C_SOURCES += apps/modules/app/ftp_client.c
+USER_C_SOURCES += apps/modules/app/ntp_client.c
+USER_C_SOURCES += apps/modules/app/net_callback.c
+USER_C_SOURCES += apps/modules/app/ftpd/ftpd.c
+#USER_C_SOURCES += apps/modules/app/vfs_disk/pseudo_disk_io.c
+#USER_C_INCLUDES += -Iapps/modules/app/ftpd/vfs_ramdisk
+#C_SOURCES := $(filter-out Middlewares/Third_Party/FatFs/src/diskio.c ,$(C_SOURCES))
 USER_C_SOURCES += apps/modules/app/vfs_disk/vfs.c
 USER_C_SOURCES += apps/modules/app/mt_file.c
-USER_C_SOURCES += apps/modules/app/net_callback.c
 USER_C_SOURCES += apps/modules/app/can_data_task.c
 USER_C_SOURCES += apps/modules/app/uart_data_task.c
 USER_C_SOURCES += apps/modules/app/duty_cycle_pattern.c
 USER_C_SOURCES += apps/modules/app/usbh_user_callback.c
 USER_C_SOURCES += apps/modules/app/early_sys_callback.c
 USER_C_SOURCES += apps/modules/app/connect_state.c
+USER_C_SOURCES += apps/modules/app/ntc_temperature.c
+USER_C_SOURCES += apps/modules/app/pt_temperature.c
 USER_C_SOURCES += apps/modules/app/can_command.c
+USER_C_SOURCES += apps/modules/app/usb_upgrade.c
+USER_C_SOURCES += apps/modules/app/firmware_upgrade_internal_flash.c
 USER_C_SOURCES += apps/modules/app/display.c
+USER_C_SOURCES += apps/modules/app/voice.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_none.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_pseudo.c
@@ -74,8 +91,27 @@ USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_stategrid
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_yyln.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_winline.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_zte.c
+USER_C_SOURCES += apps/modules/app/charger/charger_bms.c
+ifneq ($(call ifdef_any_of,CHARGER_BMS_HANDLER_GB),)
+USER_C_SOURCES += apps/modules/app/bms_multi_data.c
+USER_C_SOURCES += apps/modules/app/charger/charger_bms_gb.c
+USER_C_SOURCES += apps/modules/app/charger/function_board.c
+USER_C_SOURCES += apps/modules/app/charger/function_board_handler_485.c
+USER_C_SOURCES += apps/modules/app/charger/function_board_handler_v5.c
+endif
+ifneq ($(call ifdef_any_of,CHARGER_BMS_HANDLER_AC),)
+USER_C_SOURCES += apps/modules/app/charger/charger_bms_ac.c
+endif
+ifneq ($(call ifdef_any_of,CHARGER_BMS_HANDLER_NOBMS),)
+USER_C_SOURCES += apps/modules/app/charger/charger_bms_nobms.c
+endif
+USER_C_SOURCES += apps/modules/app/charger/power_manager.c
+USER_C_SOURCES += apps/modules/app/charger/power_manager_handler_native.c
+USER_C_SOURCES += apps/modules/app/charger/channel_record.c
 USER_C_SOURCES += apps/modules/hardware/flash.c
+USER_C_SOURCES += apps/modules/hardware/dlt_645_master_txrx.c
 USER_C_SOURCES += apps/modules/hardware/modbus_slave_txrx.c
+USER_C_SOURCES += apps/modules/hardware/modbus_master_txrx.c
 USER_C_SOURCES += apps/modules/hardware/modbus_spec.c
 USER_C_SOURCES += apps/modules/hardware/storage.c
 ifneq ($(call ifdef_any_of,STORAGE_OPS_25LC1024),)
@@ -101,11 +137,14 @@ USER_C_SOURCES += apps/modules/os/cpu_utils.c
 USER_C_SOURCES += apps/modules/os/log.c
 USER_C_SOURCES += apps/modules/os/object_class.c
 USER_C_SOURCES += apps/modules/tests/test_serial.c
+USER_C_SOURCES += apps/modules/tests/test_event.c
+USER_C_SOURCES += apps/modules/tests/test_storage.c
 
 C_SOURCES += $(USER_C_SOURCES)
 
 USER_CFLAGS += -DtraceTASK_SWITCHED_IN=StartIdleMonitor -DtraceTASK_SWITCHED_OUT=EndIdleMonitor
 USER_CFLAGS += -DLOG_CONFIG_FILE=\"log_config.h\"
+USER_CFLAGS += -DCJSON_API_VISIBILITY -DCJSON_EXPORT_SYMBOLS -DENABLE_LOCALES -Dcjson_EXPORTS
 
 #USER_CFLAGS += -DLOG_DISABLE
 #USER_CFLAGS += -DALLOC_TRACE_DISABLE
