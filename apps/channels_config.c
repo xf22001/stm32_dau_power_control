@@ -16,8 +16,6 @@
 
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
-extern UART_HandleTypeDef huart2;
-extern UART_HandleTypeDef huart3;
 extern UART_HandleTypeDef huart6;
 extern SPI_HandleTypeDef hspi3;
 
@@ -112,23 +110,10 @@ char *get_power_manager_type_des(power_manager_type_t type)
 	return des;
 }
 
-static channel_config_t channel0_config = {
-	.channel_type = CHANNEL_TYPE_PROXY_REMOTE,
-};
-
-static channel_config_t *channel_config_sz[] = {
-	&channel0_config,
-	&channel0_config,
-	&channel0_config,
-	&channel0_config,
-	&channel0_config,
-	&channel0_config,
-};
-
 static channels_config_t channels_config_0 = {
 	.id = 0,
-	.channel_number = ARRAY_SIZE(channel_config_sz),
-	.channel_config = channel_config_sz,
+	.channel_number = 0,
+	.channel_config = NULL,
 	.power_module_config = {
 		.power_module_number = 0,
 		.hcan = &hcan1,

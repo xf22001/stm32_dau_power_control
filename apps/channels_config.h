@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2022年02月11日 星期五 13时41分34秒
+ *   修改日期：2022年02月11日 星期五 20时11分07秒
  *   描    述：
  *
  *================================================================*/
@@ -268,8 +268,6 @@ char *get_channel_config_function_board_type_des(function_board_type_t type);
 char *get_card_reader_type_des(card_reader_type_t type);
 char *get_power_manager_type_des(power_manager_type_t type);
 channels_config_t *get_channels_config(uint8_t id);
-energy_meter_config_item_t *get_energy_meter_config_item(channel_config_t *channel_config, energy_meter_type_t type);
-function_board_config_item_t *get_function_board_config_item(channel_config_t *channel_config, function_board_type_t type);
 card_reader_config_item_t *get_card_reader_config_item(channels_config_t *channels_config, card_reader_type_t type);
 proxy_channel_item_t *get_proxy_channel_item_by_proxy_channel_index(proxy_channel_info_t *proxy_channel_info, uint8_t proxy_channel_index);
 proxy_channel_item_t *get_proxy_channel_item_by_channel_id(proxy_channel_info_t *proxy_channel_info, uint8_t channel_id);

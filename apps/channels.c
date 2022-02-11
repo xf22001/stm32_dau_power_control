@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2022年02月11日 星期五 15时17分23秒
+ *   修改日期：2022年02月11日 星期五 20时28分21秒
  *   描    述：
  *
  *================================================================*/
@@ -270,10 +270,6 @@ static int channels_info_set_channels_config(channels_info_t *channels_info, cha
 	start_channels_comm_proxy_remote(channels_info);
 #endif
 
-#if defined(CHARGER_CHANNEL_PROXY_LOCAL)
-	start_channels_comm_proxy_local(channels_info);
-#endif
-
 	channels_info->configed = 1;
 
 	return ret;
@@ -284,9 +280,10 @@ __weak void power_manager_restore_config(channels_info_t *channels_info)
 	int i;
 	int j;
 
-	channels_config_t *channels_config = channels_info->channels_config;
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
 	power_manager_settings_t *power_manager_settings = &channels_settings->power_manager_settings;
+
+	channels_info->channel_number = 0;
 
 	power_manager_settings->power_manager_group_number = POWER_MANAGER_GROUP_MAX_SIZE;
 
@@ -294,6 +291,8 @@ __weak void power_manager_restore_config(channels_info_t *channels_info)
 		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
 		power_manager_group_settings->channel_number = GROUP_CHANNEL_MAX_SIZE;
 		power_manager_group_settings->power_module_group_number = POWER_MODULE_GROUP_MAX_SIZE;
+
+		channels_info->channel_number += power_manager_group_settings->channel_number;
 
 		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {
 			power_module_group_settings_t *power_module_group_settings = &power_manager_group_settings->power_module_group_settings[j];
@@ -323,6 +322,34 @@ static void update_power_module_config(channels_info_t *channels_info)
 
 	channels_config->power_module_config.power_module_number = power_module_number;
 	debug("channels_config->power_module_config.power_module_number:%d", channels_config->power_module_config.power_module_number);
+}
+
+static void update_channels_config(channels_info_t *channels_info)
+{
+	int i;
+
+	channels_config_t *channels_config = channels_info->channels_config;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	power_manager_settings_t *power_manager_settings = &channels_settings->power_manager_settings;
+	channel_config_t *channel_config_sz = NULL;
+
+	channels_config->channel_number = 0;
+
+	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
+		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
+
+		channels_config->channel_number += power_manager_group_settings->channel_number;
+	}
+
+	channels_config->channel_config = os_calloc(channels_config->channel_number, sizeof(channel_config_t *));
+	channel_config_sz = os_calloc(channels_config->channel_number, sizeof(channel_config_t));
+
+	for(i = 0; i < channels_config->channel_number; i++) {
+		channel_config_t *channel_config_item = channel_config_sz + i;
+
+		channel_config_item->channel_type = CHANNEL_TYPE_PROXY_REMOTE;
+		channels_config->channel_config[i] = channel_config_item;
+	}
 }
 
 static void channels_info_reset_default_config(channels_info_t *channels_info)
@@ -368,6 +395,8 @@ static int channels_info_init_config(channels_info_t *channels_info)
 		channels_info_reset_default_config(channels_info);
 		ret = channels_info_save_config(channels_info);
 	}
+
+	update_channels_config(channels_info);
 
 	update_power_module_config(channels_info);
 
