@@ -6,7 +6,7 @@
  *   文件名称：app.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月11日 星期五 16时54分03秒
- *   修改日期：2021年12月30日 星期四 14时02分32秒
+ *   修改日期：2022年02月11日 星期五 13时40分16秒
  *   描    述：
  *
  *================================================================*/
@@ -37,7 +37,6 @@
 #include "duty_cycle_pattern.h"
 #include "display.h"
 #include "sal_hook.h"
-#include "channels_notify_voice.h"
 
 #include "log.h"
 
@@ -221,6 +220,7 @@ void app(void const *argument)
 	ret = app_load_config();
 
 	if(ret == 0) {
+		app_info->mechine_info.reset_config = 1;
 		debug("app load config successful!");
 		reset_config = app_info->mechine_info.reset_config;
 
@@ -292,10 +292,6 @@ void app(void const *argument)
 		app_info->display_data_changed_callback_item.fn = app_mechine_info_changed;
 		app_info->display_data_changed_callback_item.fn_ctx = app_info;
 		OS_ASSERT(register_callback(display_info->modbus_slave_info->data_changed_chain, &app_info->display_data_changed_callback_item) == 0);
-	}
-
-	if(init_channels_notify_voice(channels_info) != 0) {
-		debug("");
 	}
 
 	while(1) {

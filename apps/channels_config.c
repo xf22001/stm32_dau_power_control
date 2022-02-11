@@ -6,7 +6,7 @@
  *   文件名称：channels_config.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分44秒
- *   修改日期：2022年02月10日 星期四 17时14分11秒
+ *   修改日期：2022年02月11日 星期五 16时29分02秒
  *   描    述：
  *
  *================================================================*/
@@ -113,10 +113,9 @@ char *get_power_manager_type_des(power_manager_type_t type)
 }
 
 static channel_config_t channel0_config = {
-	.channel_type = CHANNEL_TYPE_NATIVE,
+	.channel_type = CHANNEL_TYPE_PROXY_LOCAL,
 	.charger_config = {
 		.charger_type = CHANNEL_CHARGER_BMS_TYPE_NOBMS,
-		.hcan_bms = &hcan2,
 	},
 };
 
@@ -137,6 +136,8 @@ static channel_config_t *channel_config_sz[] = {
 	&channel0_config,
 	&channel0_config,
 	&channel0_config,
+	&channel0_config,
+	&channel0_config,
 };
 
 static channels_config_t channels_config_0 = {
@@ -152,7 +153,11 @@ static channels_config_t channels_config_0 = {
 		.power_manager_default_type = POWER_MANAGER_TYPE_NATIVE,
 	},
 	.display_config = {
+		//.station = 1,
 		//.huart = &huart6,
+	},
+	.proxy_channel_info = {
+		.hcan = &hcan1,
 	},
 };
 

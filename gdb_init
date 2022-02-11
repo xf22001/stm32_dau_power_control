@@ -1,4 +1,4 @@
-file build/pdu_power_control.elf
+file build/dau_power_control.elf
 target remote :2331
 set pagination off
 set print pretty on

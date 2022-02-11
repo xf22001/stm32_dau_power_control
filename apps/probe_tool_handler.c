@@ -6,7 +6,7 @@
  *   文件名称：probe_tool_handler.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 12时48分07秒
- *   修改日期：2022年02月10日 星期四 19时58分06秒
+ *   修改日期：2022年02月11日 星期五 16时54分52秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,6 @@
 #include "app.h"
 #include "ftp_client.h"
 #include "channels.h"
-#include "card_reader.h"
 #include "power_manager.h"
 
 #include "sal_hook.h"

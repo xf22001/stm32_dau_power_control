@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2022年02月10日 星期四 19时47分01秒
+ *   修改日期：2022年02月11日 星期五 15时17分23秒
  *   描    述：
  *
  *================================================================*/
@@ -249,8 +249,6 @@ static int channels_info_set_channels_config(channels_info_t *channels_info, cha
 
 	alloc_power_manager(channels_info);
 
-	alloc_voice_info(channels_info);
-
 	osThreadDef(channels, task_channels, osPriorityNormal, 0, 128 * 2 * 2);
 	osThreadCreate(osThread(channels), channels_info);
 
@@ -294,7 +292,7 @@ __weak void power_manager_restore_config(channels_info_t *channels_info)
 
 	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
 		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
-		power_manager_group_settings->channel_number = channels_config->channel_number;
+		power_manager_group_settings->channel_number = GROUP_CHANNEL_MAX_SIZE;
 		power_manager_group_settings->power_module_group_number = POWER_MODULE_GROUP_MAX_SIZE;
 
 		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {

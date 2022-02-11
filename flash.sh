@@ -6,13 +6,13 @@
 #   文件名称：flash.sh
 #   创 建 者：肖飞
 #   创建日期：2019年08月09日 星期五 10时59分21秒
-#   修改日期：2021年06月10日 星期四 12时32分47秒
+#   修改日期：2022年02月11日 星期五 13时31分19秒
 #   描    述：
 #
 #================================================================
 opt_string="b:a:efd"
 
-bin_file="build/pdu_power_control.hex"
+bin_file="build/dau_power_control.hex"
 load_address="0x8000000"
 erase_flash=0
 flush_flash=0

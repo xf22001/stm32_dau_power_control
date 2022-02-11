@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy_local.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月26日 星期日 18时56分48秒
- *   修改日期：2022年01月07日 星期五 17时36分37秒
+ *   修改日期：2022年02月11日 星期五 16时15分16秒
  *   描    述：
  *
  *================================================================*/
@@ -339,8 +339,6 @@ static void channels_comm_proxy_request_periodic(channels_info_t *channels_info)
 	}
 }
 
-static uint8_t key_id = 1;
-
 static void channels_comm_proxy_request(channels_info_t *channels_info, can_info_t *can_info)
 {
 	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
@@ -374,7 +372,7 @@ static void channels_comm_proxy_request(channels_info_t *channels_info, can_info
 			u_com_can_id->v = 0;
 			u_com_can_id->s.type = PROXY_TYPE_CHANNEL;
 			u_com_can_id->s.flag = PROXY_FLAG;
-			u_com_can_id->s.src_id = proxy_channel_item->channel_id + key_id;
+			u_com_can_id->s.src_id = proxy_channel_item->channel_id;
 			u_com_can_id->s.dst_id = PROXY_ADDR_REMOTE;
 
 			channels_comm_proxy_ctx->can_tx_msg.IDE = CAN_ID_EXT;
@@ -464,7 +462,7 @@ static void channels_comm_proxy_response(channels_info_t *channels_info, can_rx_
 		return;
 	}
 
-	channel_id = u_com_can_id->s.dst_id - key_id;
+	channel_id = u_com_can_id->s.dst_id;
 	proxy_channel_item = get_proxy_channel_item_by_channel_id(&channels_config->proxy_channel_info, channel_id);
 
 	if(proxy_channel_item == NULL) {
@@ -653,8 +651,8 @@ int start_channels_comm_proxy_local(channels_info_t *channels_info)
 	com_can_id->src_id = PROXY_ADDR_REMOTE;
 	com_can_mask_id->src_id = 0xff;
 
-	com_can_id->dst_id = key_id;
-	com_can_mask_id->dst_id = 0xff;
+	com_can_id->dst_id = 0;
+	com_can_mask_id->dst_id = 0x00;
 
 	com_can_id->flag = PROXY_FLAG;
 	com_can_mask_id->flag = 0x1f;
