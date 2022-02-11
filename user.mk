@@ -6,7 +6,7 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2022年02月11日 星期五 16时53分42秒
+#   修改日期：2022年02月11日 星期五 19时17分03秒
 #   描    述：
 #
 #================================================================
@@ -52,9 +52,9 @@ USER_C_SOURCES += apps/channel_record.c
 ifneq ($(call ifdef_any_of,CHARGER_BMS_HANDLER_NOBMS),)
 USER_C_SOURCES += apps/charger_bms_nobms.c
 endif
-ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_LOCAL),)
-USER_C_SOURCES += apps/channel_handler_proxy_local.c
-USER_C_SOURCES += apps/channels_comm_proxy_local.c
+ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE),)
+USER_C_SOURCES += apps/channel_handler_proxy_remote.c
+USER_C_SOURCES += apps/channels_comm_proxy_remote.c
 endif
 USER_C_SOURCES += apps/channels_comm_proxy.c
 

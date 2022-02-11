@@ -6,7 +6,7 @@
  *   文件名称：channels_config.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分44秒
- *   修改日期：2022年02月11日 星期五 16时29分02秒
+ *   修改日期：2022年02月11日 星期五 19时21分45秒
  *   描    述：
  *
  *================================================================*/
@@ -113,21 +113,6 @@ char *get_power_manager_type_des(power_manager_type_t type)
 }
 
 static channel_config_t channel0_config = {
-	.channel_type = CHANNEL_TYPE_PROXY_LOCAL,
-	.charger_config = {
-		.charger_type = CHANNEL_CHARGER_BMS_TYPE_NOBMS,
-	},
-};
-
-static channel_config_t channel1_config = {
-	.channel_type = CHANNEL_TYPE_PROXY_REMOTE,
-};
-
-static channel_config_t channel2_config = {
-	.channel_type = CHANNEL_TYPE_PROXY_REMOTE,
-};
-
-static channel_config_t channel3_config = {
 	.channel_type = CHANNEL_TYPE_PROXY_REMOTE,
 };
 

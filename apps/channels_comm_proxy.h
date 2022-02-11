@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy.h
  *   创 建 者：肖飞
  *   创建日期：2021年09月27日 星期一 09时28分49秒
- *   修改日期：2022年02月11日 星期五 14时19分46秒
+ *   修改日期：2022年01月07日 星期五 15时49分19秒
  *   描    述：
  *
  *================================================================*/
@@ -29,19 +29,19 @@ extern "C"
 #pragma pack(push, 1)
 
 typedef struct {
-	uint8_t data[6];
+	uint8_t data[128 * 6];
 } proxy_remote_heartbeat_t;
 
 typedef struct {
-	uint8_t data[6];
+	uint8_t data[128 * 6];
 } proxy_local_heartbeat_t;
 
 typedef struct {
-	uint8_t data[6];
+	uint8_t data[128 * 6];
 } proxy_remote_stateless_t;
 
 typedef struct {
-	uint8_t data[6];
+	uint8_t data[128 * 6];
 } proxy_local_stateless_t;
 
 typedef struct {
