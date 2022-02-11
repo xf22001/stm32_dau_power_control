@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2022年02月11日 星期五 20时28分21秒
+ *   修改日期：2022年02月11日 星期五 21时21分18秒
  *   描    述：
  *
  *================================================================*/
@@ -301,29 +301,6 @@ __weak void power_manager_restore_config(channels_info_t *channels_info)
 	}
 }
 
-static void update_power_module_config(channels_info_t *channels_info)
-{
-	int i;
-	int j;
-	uint8_t power_module_number = 0;
-
-	channels_config_t *channels_config = channels_info->channels_config;
-	channels_settings_t *channels_settings = &channels_info->channels_settings;
-	power_manager_settings_t *power_manager_settings = &channels_settings->power_manager_settings;
-
-	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
-		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
-
-		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {
-			power_module_group_settings_t *power_module_group_settings = &power_manager_group_settings->power_module_group_settings[j];
-			power_module_number += power_module_group_settings->power_module_number;
-		}
-	}
-
-	channels_config->power_module_config.power_module_number = power_module_number;
-	debug("channels_config->power_module_config.power_module_number:%d", channels_config->power_module_config.power_module_number);
-}
-
 static void update_channels_config(channels_info_t *channels_info)
 {
 	int i;
@@ -347,9 +324,38 @@ static void update_channels_config(channels_info_t *channels_info)
 	for(i = 0; i < channels_config->channel_number; i++) {
 		channel_config_t *channel_config_item = channel_config_sz + i;
 
+		channel_charger_config_t *channel_charger_config = &channel_config_item->charger_config;
+
 		channel_config_item->channel_type = CHANNEL_TYPE_PROXY_REMOTE;
+
+		channel_charger_config->charger_type = CHANNEL_CHARGER_BMS_TYPE_NOBMS;
+
+
 		channels_config->channel_config[i] = channel_config_item;
 	}
+}
+
+static void update_power_module_config(channels_info_t *channels_info)
+{
+	int i;
+	int j;
+	uint8_t power_module_number = 0;
+
+	channels_config_t *channels_config = channels_info->channels_config;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	power_manager_settings_t *power_manager_settings = &channels_settings->power_manager_settings;
+
+	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
+		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
+
+		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {
+			power_module_group_settings_t *power_module_group_settings = &power_manager_group_settings->power_module_group_settings[j];
+			power_module_number += power_module_group_settings->power_module_number;
+		}
+	}
+
+	channels_config->power_module_config.power_module_number = power_module_number;
+	debug("channels_config->power_module_config.power_module_number:%d", channels_config->power_module_config.power_module_number);
 }
 
 static void channels_info_reset_default_config(channels_info_t *channels_info)
@@ -365,7 +371,6 @@ static void channels_info_reset_default_config(channels_info_t *channels_info)
 	channels_settings->power_module_settings.rate_current = 21;
 	channels_settings->power_manager_settings.type = channels_config->power_manager_config.power_manager_default_type;
 	power_manager_restore_config(channels_info);
-	channels_settings->card_reader_settings.type = channels_config->card_reader_config.default_type;
 	channels_settings->module_max_output_voltage = 10000;
 	channels_settings->module_min_output_voltage = 2000;
 	channels_settings->module_max_output_current = 1000;

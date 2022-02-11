@@ -6,7 +6,7 @@
  *   文件名称：config_layout.h
  *   创 建 者：肖飞
  *   创建日期：2021年08月25日 星期三 08时24分46秒
- *   修改日期：2021年08月25日 星期三 11时38分24秒
+ *   修改日期：2022年02月11日 星期五 21时50分15秒
  *   描    述：
  *
  *================================================================*/
@@ -27,7 +27,6 @@ extern "C"
 #include "app.h"
 #include "config_utils.h"
 #include "channels.h"
-#include "channel_record.h"
 
 #pragma pack(push, 1)
 
@@ -47,16 +46,6 @@ typedef struct {
 } storage_channel_settings_t;
 
 typedef struct {
-	config_item_head_t head;
-	channel_record_info_t channel_record_info;
-} storage_channel_record_info_t;
-
-typedef struct {
-	config_item_head_t head;
-	channel_record_item_t channel_record_item;
-} storage_channel_record_item_t;
-
-typedef struct {
 	union {
 		storage_mechine_info_t storage_mechine_info;
 		uint8_t seg[512];
@@ -68,13 +57,6 @@ typedef struct {
 		} settings;
 		uint8_t seg[2 * 1024];
 	} channels_settings_seg;
-	union {
-		struct {
-			storage_channel_record_info_t storage_channel_record_info;
-			storage_channel_record_item_t storage_channel_record_item[CHANNEL_RECORD_NUMBER];
-		} channel_record;
-		uint8_t seg[100 * 1024];
-	} channel_record_seg;
 } config_layout_t;
 
 #pragma pack(pop)

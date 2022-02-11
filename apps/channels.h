@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2022年02月11日 星期五 15时26分49秒
+ *   修改日期：2022年02月11日 星期五 21时25分10秒
  *   描    述：
  *
  *================================================================*/
@@ -33,7 +33,6 @@ extern "C"
 #include "channel_record.h"
 
 #include "display_cache.h"
-#include "dlt_645_spec.h"
 
 #define CHANNEL_TASK_PERIODIC (10)
 
@@ -89,18 +88,6 @@ typedef enum {
 } channel_state_t;
 
 typedef enum {
-	AC_CURRENT_LIMIT_16A = 0,
-	AC_CURRENT_LIMIT_32A,
-	AC_CURRENT_LIMIT_63A,
-} ac_current_limit_t;
-
-typedef enum {
-	AUXILIARY_POWER_TYPE_NONE = 0,
-	AUXILIARY_POWER_TYPE_12,
-	AUXILIARY_POWER_TYPE_24
-} auxiliary_power_type_t;
-
-typedef enum {
 	CHANNEL_FAULT_UNKNOW = 0,
 	CHANNEL_FAULT_ENERGYMETER,
 	CHANNEL_FAULT_FUNCTON_BOARD,
@@ -121,15 +108,8 @@ typedef struct {
 } charger_settings_t;
 
 typedef struct {
-	uint8_t type;//energy_meter_type_t
-	dlt_645_addr_t dlt_645_addr;
-} energy_meter_settings_t;
-
-typedef struct {
 	uint8_t channel_type;//channel_type_t
 	charger_settings_t charger_settings;
-	energy_meter_settings_t energy_meter_settings;
-	uint8_t function_board_type;//function_board_type_t;
 
 	uint8_t ac_current_limit;//ac_current_limit_t
 
@@ -249,18 +229,6 @@ typedef struct {
 	channel_event_start_t channel_event_start_bms;
 
 	channel_event_stop_t channel_event_stop;
-
-	uint8_t auxiliary_power_type;//auxiliary_power_type_t
-
-	uint16_t function_board_version;
-	uint8_t in_discharge;
-	uint8_t in_insulation_detecte;
-	uint8_t in_adhesion_detect;
-	uint32_t function_board_charger_voltage;//0.1v
-	uint32_t function_board_battery_voltage;//0.1v
-	uint8_t insulation_resistor;//0.1M
-	uint8_t dc_p_temperature;//+20
-	uint8_t dc_n_temperature;//+20
 
 	uint32_t require_voltage;//0.1v
 	uint32_t require_current;//0.1v
