@@ -6,7 +6,7 @@
  *   文件名称：power_manager_handler_native.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 15时40分30秒
- *   修改日期：2021年12月30日 星期四 09时22分06秒
+ *   修改日期：2022年02月13日 星期日 12时21分50秒
  *   描    述：
  *
  *================================================================*/
@@ -21,24 +21,6 @@
 typedef struct {
 	uint32_t power_modules_status_periodic_stamp;
 } power_manager_ctx_t;
-
-int power_manager_channel_request_state(power_manager_info_t *power_manager_info, uint8_t channel_id, power_manager_channel_request_state_t state)
-{
-	int ret = -1;
-	channels_info_t *channels_info = power_manager_info->channels_info;
-	channels_config_t *channels_config = channels_info->channels_config;
-	power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + channel_id;
-
-	OS_ASSERT(channel_id < channels_config->channel_number);
-
-	if(power_manager_channel_info->request_state != POWER_MANAGER_CHANNEL_REQUEST_STATE_NONE) {
-		return ret;
-	}
-
-	power_manager_channel_info->request_state = state;
-	ret = 0;
-	return ret;
-}
 
 #define POWER_MANAGER_CHANNEL_PREPARE_START_TIMEOUT (30 * 1000)
 #define POWER_MANAGER_CHANNEL_PREPARE_STOP_TIMEOUT (30 * 1000)
@@ -57,6 +39,8 @@ static void handle_power_manager_channel_state(power_manager_channel_info_t *pow
 	switch(power_manager_channel_info->status.state) {
 		case POWER_MANAGER_CHANNEL_STATE_IDLE: {
 			if(power_manager_channel_info->request_state == POWER_MANAGER_CHANNEL_REQUEST_STATE_START) {//开机
+				power_manager_channel_info->status.module_ready_notify = 1;
+
 				if(power_manager_info->power_manager_group_policy_handler->channel_start != NULL) {
 					power_manager_info->power_manager_group_policy_handler->channel_start(power_manager_channel_info);
 				}
@@ -95,7 +79,7 @@ static void handle_power_manager_channel_state(power_manager_channel_info_t *pow
 				if(list_contain(&power_manager_channel_info->list, &power_manager_group_info->channel_active_list) != 0) {//无法启动，停止启动过程
 					power_manager_channel_info->status.state = POWER_MANAGER_CHANNEL_STATE_IDLE;
 					debug("power manager channel %d to state %s", power_manager_channel_info->id, get_power_manager_channel_state_des(power_manager_channel_info->status.state));
-					channel_request_stop(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_POWER_MODULES);
+					channel_request_stop(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_POWER_MANAGER);
 				} else {
 					if(power_manager_group_info->change_state != POWER_MANAGER_CHANGE_STATE_IDLE) {//配置没有同步完成
 						if(ticks_duration(ticks, power_manager_channel_info->state_change_stamp) >= POWER_MANAGER_CHANNEL_PREPARE_START_TIMEOUT) {//超时,报警?
@@ -414,8 +398,13 @@ static int power_manager_group_poewr_module_assign_ready(power_manager_group_inf
 
 	list_for_each_entry(power_manager_channel_info, head, power_manager_channel_info_t, list) {
 		if(power_manager_channel_info->status.module_ready_notify == 1) {
+			power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_group_info->power_manager_info;
+			channels_info_t *channels_info = power_manager_info->channels_info;
+			channel_info_t *channel_info = channels_info->channel_info + power_manager_channel_info->id;
+
 			power_manager_channel_info->status.module_ready_notify = 0;
 			debug("channel %d module assign ready", power_manager_channel_info->id);
+			do_callback_chain(power_manager_info->power_manager_channel_module_assign_ready_chain, channel_info);
 		}
 	}
 	return ret;
@@ -746,8 +735,7 @@ static void update_poewr_module_item_info_status(power_module_item_info_t *power
 				if(power_manager_channel_info->status.state != POWER_MANAGER_CHANNEL_STATE_IDLE) {
 					debug("channel %d stop by power module %d fault",
 					      power_manager_channel_info->id, power_module_item_info->id);
-					//todo...
-					power_manager_channel_request_state(power_manager_info, power_manager_channel_info->id, POWER_MANAGER_CHANNEL_REQUEST_STATE_STOP);
+					set_power_manager_channel_request_state(power_manager_info, power_manager_channel_info->id, POWER_MANAGER_CHANNEL_REQUEST_STATE_STOP);
 				}
 			}
 

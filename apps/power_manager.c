@@ -6,7 +6,7 @@
  *   文件名称：power_manager.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分52秒
- *   修改日期：2021年12月23日 星期四 11时53分09秒
+ *   修改日期：2022年02月12日 星期六 19时15分11秒
  *   描    述：
  *
  *================================================================*/
@@ -324,6 +324,9 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 	int k;
 	uint8_t power_module_item_offset = 0;
 	uint8_t power_manager_channel_offset = 0;
+
+	power_manager_info->power_manager_channel_module_assign_ready_chain = alloc_callback_chain();
+	OS_ASSERT(power_manager_info->power_manager_channel_module_assign_ready_chain != NULL);
 
 	debug("power manager group number:%d", power_manager_settings->power_manager_group_number);
 	power_manager_info->power_manager_group_number = power_manager_settings->power_manager_group_number;

@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2022年02月11日 星期五 21时22分48秒
+ *   修改日期：2022年02月13日 星期日 12时51分36秒
  *   描    述：
  *
  *================================================================*/
@@ -85,16 +85,8 @@ char *get_channel_fault_des(channel_fault_t fault)
 	char *des = "unknow";
 
 	switch(fault) {
-			add_des_case(CHANNEL_FAULT_UNKNOW);
-			add_des_case(CHANNEL_FAULT_ENERGYMETER);
-			add_des_case(CHANNEL_FAULT_FUNCTON_BOARD);
-			add_des_case(CHANNEL_FAULT_CONNECTOR);
-			add_des_case(CHANNEL_FAULT_FUNCTION_BOARD_CONNECT);
-			add_des_case(CHANNEL_FAULT_DC_P_OVER_TEMPERATURE);
-			add_des_case(CHANNEL_FAULT_DC_N_OVER_TEMPERATURE);
-			add_des_case(CHANNEL_FAULT_DISCHARGE_RESISTOR_OVER_TEMPERATURE);
-			add_des_case(CHANNEL_FAULT_ADHESION_P);
-			add_des_case(CHANNEL_FAULT_ADHESION_N);
+			add_des_case(CHANNEL_FAULT_CONNECT_TIMEOUT);
+			add_des_case(CHANNEL_FAULT_RELAY_BOARD_OVER_TEMPERATURE);
 
 		default: {
 		}
@@ -109,19 +101,10 @@ char *get_channels_fault_des(channels_fault_t fault)
 	char *des = "unknow";
 
 	switch(fault) {
-			add_des_case(CHANNELS_FAULT_UNKNOW);
-			add_des_case(CHANNELS_FAULT_INSULATION);
-			add_des_case(CHANNELS_FAULT_CARD_READER);
-			add_des_case(CHANNELS_FAULT_DISPLAY);
-			add_des_case(CHANNELS_FAULT_DOOR);
-			add_des_case(CHANNELS_FAULT_RELAY_ADHESION);
+			add_des_case(CHANNELS_FAULT_RELAY_CHECK);
 			add_des_case(CHANNELS_FAULT_FORCE_STOP);
-			add_des_case(CHANNELS_FAULT_INPUT_OVER_VOLTAGE);
-			add_des_case(CHANNELS_FAULT_INPUT_LOW_VOLTAGE);
-			add_des_case(CHANNELS_FAULT_ELECTRIC_LEAK_CALIBRATION);
-			add_des_case(CHANNELS_FAULT_ELECTRIC_LEAK_PROTECT);
-			add_des_case(CHANNELS_FAULT_PE_PROTECT);
-			add_des_case(CHANNELS_FAULT_SIZE);
+			add_des_case(CHANNELS_FAULT_DOOR);
+			add_des_case(CHANNELS_FAULT_DISPLAY);
 
 		default: {
 		}
@@ -131,71 +114,22 @@ char *get_channels_fault_des(channels_fault_t fault)
 	return des;
 }
 
+#define add_fault_to_channel_record_item_stop_reason_case(e) \
+		case e: { \
+			return channel_record_item_stop_reason_fault(e); \
+		} \
+		break
+
 channel_record_item_stop_reason_t channels_fault_to_channel_record_item_stop_reason(channels_fault_t fault)
 {
 	switch(fault) {
-		case  CHANNELS_FAULT_UNKNOW: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_NONE;
-		}
-		break;
-
-		case  CHANNELS_FAULT_INSULATION: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_INSULATION;
-		}
-		break;
-
-		case  CHANNELS_FAULT_CARD_READER: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_CARD_READER;
-		}
-		break;
-
-		case  CHANNELS_FAULT_DISPLAY: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_DISPLAY;
-		}
-		break;
-
-		case  CHANNELS_FAULT_DOOR: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_DOOR;
-		}
-		break;
-
-		case  CHANNELS_FAULT_RELAY_ADHESION: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_RELAY_ADHESION;
-		}
-		break;
-
-		case  CHANNELS_FAULT_FORCE_STOP: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_FORCE_STOP;
-		}
-		break;
-
-		case  CHANNELS_FAULT_INPUT_OVER_VOLTAGE: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_INPUT_OVER_VOLTAGE;
-		}
-		break;
-
-		case  CHANNELS_FAULT_INPUT_LOW_VOLTAGE: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_INPUT_LOW_VOLTAGE;
-		}
-		break;
-
-		case  CHANNELS_FAULT_ELECTRIC_LEAK_CALIBRATION: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_ELECTRIC_LEAK_CALIBRATION;
-		}
-		break;
-
-		case  CHANNELS_FAULT_ELECTRIC_LEAK_PROTECT: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_ELECTRIC_LEAK_PROTECT;
-		}
-		break;
-
-		case  CHANNELS_FAULT_PE_PROTECT: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_PE_PROTECT;
-		}
-		break;
+		add_fault_to_channel_record_item_stop_reason_case(CHANNELS_FAULT_RELAY_CHECK);
+		add_fault_to_channel_record_item_stop_reason_case(CHANNELS_FAULT_FORCE_STOP);
+		add_fault_to_channel_record_item_stop_reason_case(CHANNELS_FAULT_DOOR);
+		add_fault_to_channel_record_item_stop_reason_case(CHANNELS_FAULT_DISPLAY);
 
 		default: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_NONE;
+			return CHANNEL_RECORD_ITEM_STOP_REASON_UNKNOW;
 		}
 		break;
 	}
@@ -204,48 +138,12 @@ channel_record_item_stop_reason_t channels_fault_to_channel_record_item_stop_rea
 channel_record_item_stop_reason_t channel_fault_to_channel_record_item_stop_reason(channel_fault_t fault)
 {
 	switch(fault) {
-		case  CHANNEL_FAULT_UNKNOW: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_NONE;
-		}
-		break;
-
-		case  CHANNEL_FAULT_ENERGYMETER: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_ENERGYMETER;
-		}
-		break;
-
-		case  CHANNEL_FAULT_CONNECTOR: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_CONNECTOR;
-		}
-		break;
-
-		case  CHANNEL_FAULT_FUNCTION_BOARD_CONNECT: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_FUNCTION_BOARD_CONNECT;
-		}
-		break;
-
-		case  CHANNEL_FAULT_DC_P_OVER_TEMPERATURE: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_OVER_TEMPERATURE;
-		}
-		break;
-
-		case  CHANNEL_FAULT_DC_N_OVER_TEMPERATURE: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_OVER_TEMPERATURE;
-		}
-		break;
-
-		case  CHANNEL_FAULT_ADHESION_P: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_ADHESION_P;
-		}
-		break;
-
-		case  CHANNEL_FAULT_ADHESION_N: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_FAULT_ADHESION_N;
-		}
-		break;
+		add_fault_to_channel_record_item_stop_reason_case(CHANNEL_FAULT_FAULT);
+		add_fault_to_channel_record_item_stop_reason_case(CHANNEL_FAULT_CONNECT_TIMEOUT);
+		add_fault_to_channel_record_item_stop_reason_case(CHANNEL_FAULT_RELAY_BOARD_OVER_TEMPERATURE);
 
 		default: {
-			return CHANNEL_RECORD_ITEM_STOP_REASON_NONE;
+			return CHANNEL_RECORD_ITEM_STOP_REASON_UNKNOW;
 		}
 		break;
 	}
@@ -417,8 +315,8 @@ static int channel_init(channel_info_t *channel_info)
 	OS_ASSERT(channel_info->state_changed_chain != NULL);
 	channel_info->request_stop_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->request_stop_chain != NULL);
-	channel_info->power_manager_channel_state_chain = alloc_callback_chain();
-	OS_ASSERT(channel_info->power_manager_channel_state_chain != NULL);
+	channel_info->power_manager_channel_request_state_chain = alloc_callback_chain();
+	OS_ASSERT(channel_info->power_manager_channel_request_state_chain != NULL);
 	channel_info->bms_auto_start_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->bms_auto_start_chain != NULL);
 

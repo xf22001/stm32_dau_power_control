@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2022年02月11日 星期五 21时25分10秒
+ *   修改日期：2022年02月13日 星期日 10时28分27秒
  *   描    述：
  *
  *================================================================*/
@@ -88,16 +88,9 @@ typedef enum {
 } channel_state_t;
 
 typedef enum {
-	CHANNEL_FAULT_UNKNOW = 0,
-	CHANNEL_FAULT_ENERGYMETER,
-	CHANNEL_FAULT_FUNCTON_BOARD,
-	CHANNEL_FAULT_CONNECTOR,
-	CHANNEL_FAULT_FUNCTION_BOARD_CONNECT,
-	CHANNEL_FAULT_DC_P_OVER_TEMPERATURE,
-	CHANNEL_FAULT_DC_N_OVER_TEMPERATURE,
-	CHANNEL_FAULT_DISCHARGE_RESISTOR_OVER_TEMPERATURE,
-	CHANNEL_FAULT_ADHESION_P,
-	CHANNEL_FAULT_ADHESION_N,
+	CHANNEL_FAULT_FAULT = 0,
+	CHANNEL_FAULT_CONNECT_TIMEOUT,
+	CHANNEL_FAULT_RELAY_BOARD_OVER_TEMPERATURE,
 	CHANNEL_FAULT_SIZE,
 } channel_fault_t;
 
@@ -177,13 +170,13 @@ typedef struct {
 	callback_chain_t *end_chain;
 	callback_chain_t *state_changed_chain;
 	callback_chain_t *request_stop_chain;
-	callback_chain_t *power_manager_channel_state_chain;
+	callback_chain_t *power_manager_channel_request_state_chain;
 	callback_chain_t *bms_auto_start_chain;
 
 	callback_item_t channel_start_callback_item;
 	callback_item_t channel_end_callback_item;
 	callback_item_t channel_state_changed_callback_item;
-	callback_item_t power_manager_channel_state_callback_item;
+	callback_item_t power_manager_channel_request_state_callback_item;
 	callback_item_t bms_auto_start_callback_item;
 
 	//channel record cb
@@ -309,18 +302,10 @@ typedef struct {
 #pragma pack(pop)
 
 typedef enum {
-	CHANNELS_FAULT_UNKNOW = 0,
-	CHANNELS_FAULT_INSULATION,
-	CHANNELS_FAULT_CARD_READER,
-	CHANNELS_FAULT_DISPLAY,
-	CHANNELS_FAULT_DOOR,
-	CHANNELS_FAULT_RELAY_ADHESION,
+	CHANNELS_FAULT_RELAY_CHECK = 0,
 	CHANNELS_FAULT_FORCE_STOP,
-	CHANNELS_FAULT_INPUT_OVER_VOLTAGE,
-	CHANNELS_FAULT_INPUT_LOW_VOLTAGE,
-	CHANNELS_FAULT_ELECTRIC_LEAK_CALIBRATION,
-	CHANNELS_FAULT_ELECTRIC_LEAK_PROTECT,
-	CHANNELS_FAULT_PE_PROTECT,
+	CHANNELS_FAULT_DOOR,
+	CHANNELS_FAULT_DISPLAY,
 	CHANNELS_FAULT_SIZE,
 } channels_fault_t;
 

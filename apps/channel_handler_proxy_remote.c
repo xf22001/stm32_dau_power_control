@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月27日 星期一 09时22分16秒
- *   修改日期：2022年02月11日 星期五 21时57分08秒
+ *   修改日期：2022年02月12日 星期六 20时43分14秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,7 @@
 
 #include "charger.h"
 #include "charger_bms.h"
+#include "power_manager.h"
 
 #include "log.h"
 
@@ -45,6 +46,17 @@ static void handle_channel_faults_stop(channel_info_t *channel_info)
 	}
 }
 
+static void handle_channel_power_manager_stop(channel_info_t *channel_info)
+{
+	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
+	power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+	power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + channel_info->channel_id;
+
+	if(power_manager_channel_info->status.state == POWER_MANAGER_CHANNEL_STATE_IDLE) {
+		channel_request_stop(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_POWER_MANAGER);
+	}
+}
+
 static void handle_channel_stop(channel_info_t *channel_info)
 {
 	switch(channel_info->state) {
@@ -52,6 +64,7 @@ static void handle_channel_stop(channel_info_t *channel_info)
 		case CHANNEL_STATE_STARTING:
 		case CHANNEL_STATE_CHARGING: {
 			handle_channel_faults_stop(channel_info);
+			handle_channel_power_manager_stop(channel_info);
 		}
 		break;
 
@@ -397,6 +410,16 @@ static void channel_end_callback(void *fn_ctx, void *chain_ctx)
 	//channel_info_t *channel_info = (channel_info_t *)fn_ctx;
 }
 
+static void power_manager_channel_request_state_cb(void *fn_ctx, void *chain_ctx)
+{
+	channel_info_t *channel_info = (channel_info_t *)fn_ctx;
+	power_manager_channel_request_state_t *state = (power_manager_channel_request_state_t *)fn_ctx;
+	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
+	power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+
+	set_power_manager_channel_request_state(power_manager_info, channel_info->channel_id, *state);
+}
+
 static int init(void *_channel_info)
 {
 	int ret = 0;
@@ -423,6 +446,10 @@ static int init(void *_channel_info)
 	channel_info->channel_state_changed_callback_item.fn_ctx = channel_info;
 	OS_ASSERT(register_callback(channel_info->state_changed_chain, &channel_info->channel_state_changed_callback_item) == 0);
 
+	channel_info->power_manager_channel_request_state_callback_item.fn = power_manager_channel_request_state_cb;
+	channel_info->power_manager_channel_request_state_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->power_manager_channel_request_state_chain, &channel_info->power_manager_channel_request_state_callback_item) == 0);
+
 	return ret;
 }
 
@@ -437,6 +464,7 @@ static int deinit(void *_channel_info)
 	remove_callback(channel_info->start_chain, &channel_info->channel_start_callback_item);
 	remove_callback(channel_info->end_chain, &channel_info->channel_end_callback_item);
 	remove_callback(channel_info->state_changed_chain, &channel_info->channel_state_changed_callback_item);
+	remove_callback(channel_info->power_manager_channel_request_state_chain, &channel_info->power_manager_channel_request_state_callback_item);
 
 	return ret;
 }

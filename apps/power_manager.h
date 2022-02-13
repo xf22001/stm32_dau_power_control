@@ -6,7 +6,7 @@
  *   文件名称：power_manager.h
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分56秒
- *   修改日期：2021年12月29日 星期三 11时02分27秒
+ *   修改日期：2022年02月12日 星期六 19时15分12秒
  *   描    述：
  *
  *================================================================*/
@@ -219,6 +219,7 @@ typedef struct {
 	power_manager_group_info_t *power_manager_group_info;//电源管理组分配信息
 	power_manager_handler_t *power_manager_handler;
 	power_manager_group_policy_handler_t *power_manager_group_policy_handler;
+	callback_chain_t *power_manager_channel_module_assign_ready_chain;
 	callback_item_t periodic_callback_item;
 	callback_item_t dump_power_manager_stats_callback_item;
 	void *power_manager_ctx;

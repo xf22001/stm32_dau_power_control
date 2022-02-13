@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月16日 星期四 10时34分46秒
- *   修改日期：2022年02月11日 星期五 19时30分40秒
+ *   修改日期：2022年02月13日 星期日 10时12分57秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,7 @@
 #include "can_command.h"
 #include "can_data_task.h"
 #include "can_data_task.h"
+#include "power_manager.h"
 
 //#define LOG_DISABLE
 #include "log.h"
@@ -35,6 +36,7 @@ typedef struct {
 	connect_state_t connect_state;
 	command_status_t *cmd_ctx;
 	channel_data_ctx_t data_ctx;
+	callback_item_t channel_power_module_assign_ready_cb;
 } channels_comm_proxy_channel_ctx_t;
 
 typedef struct {
@@ -54,6 +56,8 @@ typedef int (*timeout_callback_t)(channels_info_t *channels_info, void *_command
 
 typedef struct {
 	uint8_t cmd;
+	uint8_t cmd_code;
+	uint8_t broadcast;
 	uint32_t request_period;
 	request_callback_t request_callback;
 	response_callback_t response_callback;
@@ -75,203 +79,7 @@ static int timeout_callback_proxy_null(channels_info_t *channels_info, void *_co
 	return -1;
 }
 
-static int request_callback_proxy_remote_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t proxy_channel_index)
-{
-	int ret;
-	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
-	command_item_t *item = (command_item_t *)_command_item;
-	channels_comm_proxy_channel_ctx_t *channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_index;
-	command_status_t *cmd_ctx = channel_ctx->cmd_ctx + item->cmd;
-	channel_data_ctx_t *data_ctx = &channel_ctx->data_ctx;
-	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channels_comm_proxy_ctx->can_tx_msg.Data;
-
-	ret = can_com_prepare_tx_request(cmd_ctx,
-	                                 can_com_cmd_common,
-	                                 data_ctx->proxy_remote_heartbeat.data,
-	                                 sizeof(data_ctx->proxy_remote_heartbeat));
-
-	return ret;
-}
-
-static int response_callback_proxy_remote_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t proxy_channel_index)
-{
-	int ret;
-	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
-	command_item_t *item = (command_item_t *)_command_item;
-	channels_comm_proxy_channel_ctx_t *channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_index;
-	command_status_t *cmd_ctx = channel_ctx->cmd_ctx + item->cmd;
-	channel_data_ctx_t *data_ctx = &channel_ctx->data_ctx;
-	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)channels_comm_proxy_ctx->can_rx_msg->Data;
-
-	ret = can_com_process_rx_response(cmd_ctx,
-	                                  can_com_cmd_response,
-	                                  sizeof(data_ctx->proxy_remote_heartbeat));
-
-	return ret;
-}
-
-static int timeout_callback_proxy_remote_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t proxy_channel_index)
-{
-	int ret = -1;
-	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
-	command_item_t *item = (command_item_t *)_command_item;
-	channels_comm_proxy_channel_ctx_t *channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_index;
-	command_status_t *cmd_ctx = channel_ctx->cmd_ctx + item->cmd;
-	cmd_ctx->state = COMMAND_STATE_REQUEST;
-	ret = 0;
-	return ret;
-}
-
-static command_item_t command_item_proxy_remote_heartbeat = {
-	.cmd = CHANNELS_COMM_PROXY_COMMAND_PROXY_REMOTE_HEARTBEAT,
-	.request_period = 1000,
-	.request_callback = request_callback_proxy_remote_heartbeat,
-	.response_callback = response_callback_proxy_remote_heartbeat,
-	.timeout_callback = timeout_callback_proxy_remote_heartbeat,
-};
-
-static int request_callback_proxy_local_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t proxy_channel_index)
-{
-	int ret;
-	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
-	command_item_t *item = (command_item_t *)_command_item;
-	channels_comm_proxy_channel_ctx_t *channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_index;
-	command_status_t *cmd_ctx = channel_ctx->cmd_ctx + item->cmd;
-	channel_data_ctx_t *data_ctx = &channel_ctx->data_ctx;
-	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)channels_comm_proxy_ctx->can_tx_msg.Data;
-
-	ret = can_com_prepare_tx_response(cmd_ctx, can_com_cmd_response, sizeof(data_ctx->proxy_local_heartbeat));
-
-	if(can_com_cmd_response->response_status == CAN_COM_RESPONSE_STATUS_DONE) {
-		//receive done
-	}
-
-	return ret;
-}
-
-static int response_callback_proxy_local_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t proxy_channel_index)
-{
-	int ret;
-	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
-	command_item_t *item = (command_item_t *)_command_item;
-	channels_comm_proxy_channel_ctx_t *channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_index;
-	command_status_t *cmd_ctx = channel_ctx->cmd_ctx + item->cmd;
-	channel_data_ctx_t *data_ctx = &channel_ctx->data_ctx;
-	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channels_comm_proxy_ctx->can_rx_msg->Data;
-
-	ret = can_com_process_rx_request(cmd_ctx,
-	                                 can_com_cmd_common,
-	                                 data_ctx->proxy_local_heartbeat.data,
-	                                 sizeof(data_ctx->proxy_local_heartbeat));
-
-	return ret;
-}
-
-static command_item_t command_item_proxy_local_heartbeat = {
-	.cmd = CHANNELS_COMM_PROXY_COMMAND_PROXY_LOCAL_HEARTBEAT,
-	.request_period = 0,
-	.request_callback = request_callback_proxy_local_heartbeat,
-	.response_callback = response_callback_proxy_local_heartbeat,
-	.timeout_callback = timeout_callback_proxy_null,
-};
-
-static int request_callback_proxy_remote_stateless(channels_info_t *channels_info, void *_command_item, uint8_t proxy_channel_index)
-{
-	int ret;
-	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
-	command_item_t *item = (command_item_t *)_command_item;
-	channels_comm_proxy_channel_ctx_t *channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_index;
-	command_status_t *cmd_ctx = channel_ctx->cmd_ctx + item->cmd;
-	channel_data_ctx_t *data_ctx = &channel_ctx->data_ctx;
-	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channels_comm_proxy_ctx->can_tx_msg.Data;
-
-	ret = can_com_prepare_tx_request_stateless(cmd_ctx,
-	        can_com_cmd_common,
-	        data_ctx->proxy_remote_stateless.data,
-	        sizeof(data_ctx->proxy_remote_stateless));
-
-	return ret;
-}
-
-static command_item_t command_item_proxy_remote_stateless = {
-	.cmd = CHANNELS_COMM_PROXY_COMMAND_PROXY_REMOTE_STATELESS,
-	.request_period = 1000,
-	.request_callback = request_callback_proxy_remote_stateless,
-	.response_callback = response_callback_proxy_null,
-	.timeout_callback = timeout_callback_proxy_null,
-};
-
-static int response_callback_proxy_local_stateless(channels_info_t *channels_info, void *_command_item, uint8_t proxy_channel_index)
-{
-	int ret;
-	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
-	command_item_t *item = (command_item_t *)_command_item;
-	channels_comm_proxy_channel_ctx_t *channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_index;
-	command_status_t *cmd_ctx = channel_ctx->cmd_ctx + item->cmd;
-	channel_data_ctx_t *data_ctx = &channel_ctx->data_ctx;
-	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channels_comm_proxy_ctx->can_rx_msg->Data;
-
-	ret = can_com_process_rx_request_stateless(cmd_ctx,
-	        can_com_cmd_common,
-	        data_ctx->proxy_local_stateless.data,
-	        sizeof(data_ctx->proxy_local_stateless));
-
-	if(cmd_ctx->state == COMMAND_STATE_IDLE) {
-		if(cmd_ctx->index * sizeof(can_com_cmd_common->data) >= sizeof(data_ctx->proxy_local_stateless)) {
-			//_hexdump("proxy_local_stateless", (const char *)data_ctx->proxy_local_stateless.data, sizeof(data_ctx->proxy_local_stateless));
-		}
-	}
-
-	return ret;
-}
-
-static command_item_t command_item_proxy_local_stateless = {
-	.cmd = CHANNELS_COMM_PROXY_COMMAND_PROXY_LOCAL_STATELESS,
-	.request_period = 0,
-	.request_callback = request_callback_proxy_null,
-	.response_callback = response_callback_proxy_local_stateless,
-	.timeout_callback = timeout_callback_proxy_null,
-};
-
-static int response_callback_proxy_local_channel_login(channels_info_t *channels_info, void *_command_item, uint8_t proxy_channel_index)
-{
-	int ret;
-	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
-	command_item_t *item = (command_item_t *)_command_item;
-	channels_comm_proxy_channel_ctx_t *channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_index;
-	command_status_t *cmd_ctx = channel_ctx->cmd_ctx + item->cmd;
-	channel_data_ctx_t *data_ctx = &channel_ctx->data_ctx;
-	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channels_comm_proxy_ctx->can_rx_msg->Data;
-
-	ret = can_com_process_rx_request_stateless(cmd_ctx,
-	        can_com_cmd_common,
-	        (uint8_t *)&data_ctx->proxy_local_channel_login,
-	        sizeof(data_ctx->proxy_local_channel_login));
-
-	if(cmd_ctx->state == COMMAND_STATE_IDLE) {
-		if(cmd_ctx->index * sizeof(can_com_cmd_common->data) >= sizeof(data_ctx->proxy_local_channel_login)) {
-			//_hexdump("proxy_local_channel_login", (const char *)&data_ctx->proxy_local_channel_login, sizeof(data_ctx->proxy_local_channel_login));
-		}
-	}
-
-	return ret;
-}
-
-static command_item_t command_item_proxy_local_channel_login = {
-	.cmd = CHANNELS_COMM_PROXY_COMMAND_PROXY_LOCAL_CHANNEL_LOGIN,
-	.request_period = 0,
-	.request_callback = request_callback_proxy_null,
-	.response_callback = response_callback_proxy_local_channel_login,
-	.timeout_callback = timeout_callback_proxy_null,
-};
-
 static command_item_t *channels_comm_proxy_command_table[] = {
-	//&command_item_proxy_remote_heartbeat,
-	//&command_item_proxy_local_heartbeat,
-	//&command_item_proxy_remote_stateless,
-	//&command_item_proxy_local_stateless,
-
-	&command_item_proxy_local_channel_login,
 };
 
 static void channels_comm_proxy_set_connect_state(channels_comm_proxy_ctx_t *channels_comm_proxy_ctx, uint8_t proxy_channel_index, uint8_t state)
@@ -620,12 +428,22 @@ static int init_channels_config_proxy_channel_info(channels_config_t *channels_c
 	return ret;
 }
 
+static void channel_power_module_assign_ready(void *_proxy_channel_item, void *_channel_info)
+{
+	//proxy_channel_item_t *proxy_channel_item = (proxy_channel_item_t *)_proxy_channel_item;
+	//channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	//channels_info_t *channels_info = (channels_info_t *)channel_info->channes_info;
+	//channels_comm_proxy_ctx_t *channels_comm_proxy_ctx = (channels_comm_proxy_ctx_t *)channels_info->channels_comm_proxy_ctx;
+	//channels_comm_proxy_channel_ctx_t *item = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + proxy_channel_item->proxy_channel_index;
+}
+
 int start_channels_comm_proxy_remote(channels_info_t *channels_info)
 {
 	int ret = 0;
 	channels_comm_proxy_ctx_t *channels_comm_proxy_ctx;
 	channels_config_t *channels_config = channels_info->channels_config;
 	uint8_t proxy_channel_number;
+	power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
 	int i;
 
 	if(channels_info->channels_comm_proxy_ctx != NULL) {
@@ -650,6 +468,7 @@ int start_channels_comm_proxy_remote(channels_info_t *channels_info)
 		int j;
 		channels_comm_proxy_channel_ctx_t *item = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + i;
 		channel_data_ctx_t *channel_data_ctx = &item->data_ctx;
+		proxy_channel_item_t *proxy_channel_item = get_proxy_channel_item_by_proxy_channel_index(&channels_config->proxy_channel_info, i);
 
 		item->cmd_ctx = (command_status_t *)os_calloc(CHANNELS_COMM_PROXY_COMMAND_SIZE, sizeof(command_status_t));
 		OS_ASSERT(item->cmd_ctx != NULL);
@@ -666,6 +485,10 @@ int start_channels_comm_proxy_remote(channels_info_t *channels_info)
 		for(j = 0; j < sizeof(channel_data_ctx->proxy_remote_stateless); j++) {
 			channel_data_ctx->proxy_remote_stateless.data[j] = j;
 		}
+
+		item->channel_power_module_assign_ready_cb.fn = channel_power_module_assign_ready;
+		item->channel_power_module_assign_ready_cb.fn_ctx = proxy_channel_item;
+		OS_ASSERT(register_callback(power_manager_info->power_manager_channel_module_assign_ready_chain, &item->channel_power_module_assign_ready_cb) == 0);
 	}
 
 	channels_comm_proxy_ctx->can_data_task_info = get_or_alloc_can_data_task_info(channels_config->proxy_channel_info.hcan);
