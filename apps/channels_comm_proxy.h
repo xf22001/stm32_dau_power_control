@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy.h
  *   创 建 者：肖飞
  *   创建日期：2021年09月27日 星期一 09时28分49秒
- *   修改日期：2022年01月07日 星期五 15时49分19秒
+ *   修改日期：2022年02月13日 星期日 20时30分11秒
  *   描    述：
  *
  *================================================================*/
@@ -50,16 +50,35 @@ typedef struct {
 
 #pragma pack(pop)
 
-typedef enum {
-	CHANNELS_COMM_PROXY_COMMAND_PROXY_REMOTE_HEARTBEAT = 0,//远端代理心跳
-	CHANNELS_COMM_PROXY_COMMAND_PROXY_LOCAL_HEARTBEAT,//本地代理心跳
-	CHANNELS_COMM_PROXY_COMMAND_PROXY_REMOTE_STATELESS,//远端代理广播
-	CHANNELS_COMM_PROXY_COMMAND_PROXY_LOCAL_STATELESS,//本地代理广播
+#define channels_comm_proxy_command_enum(e) CHANNELS_COMM_PROXY_COMMAND_##e
 
-	CHANNELS_COMM_PROXY_COMMAND_PROXY_LOCAL_CHANNEL_LOGIN,//本地上线
+typedef enum {
+	channels_comm_proxy_command_enum(CHANNEL_HEARTBEAT) = 0,
+	channels_comm_proxy_command_enum(CHANNEL_REQUIRE),
+	channels_comm_proxy_command_enum(CHANNEL_START),
+	channels_comm_proxy_command_enum(CHANNEL_STOP),
+	channels_comm_proxy_command_enum(CHANNEL_OUTPUT),
+	channels_comm_proxy_command_enum(DAU_STATUS),
+	channels_comm_proxy_command_enum(MODULES_READY),
+	channels_comm_proxy_command_enum(MODULES_STATUS),
+	channels_comm_proxy_command_enum(INPUT_VOLTAGE),
 
 	CHANNELS_COMM_PROXY_COMMAND_SIZE,
 } channels_comm_proxy_command_t;
+
+#define channels_comm_proxy_command_code_enum(e) CHANNELS_COMM_PROXY_COMMAND_CODE_##e
+
+typedef enum {
+	channels_comm_proxy_command_code_enum(CHANNEL_HEARTBEAT) = 0,
+	channels_comm_proxy_command_code_enum(CHANNEL_REQUIRE),
+	channels_comm_proxy_command_code_enum(CHANNEL_START),
+	channels_comm_proxy_command_code_enum(CHANNEL_STOP),
+	channels_comm_proxy_command_code_enum(CHANNEL_OUTPUT) = 5,
+	channels_comm_proxy_command_code_enum(DAU_STATUS) = 101,
+	channels_comm_proxy_command_code_enum(MODULES_READY) = 102,
+	channels_comm_proxy_command_code_enum(MODULES_STATUS) = 105,
+	channels_comm_proxy_command_code_enum(INPUT_VOLTAGE) = 106,
+} channels_comm_proxy_command_code_t;
 
 char *get_channels_comm_proxy_command_des(channels_comm_proxy_command_t cmd);
 

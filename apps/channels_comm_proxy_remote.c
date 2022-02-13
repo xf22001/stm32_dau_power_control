@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月16日 星期四 10时34分46秒
- *   修改日期：2022年02月13日 星期日 10时12分57秒
+ *   修改日期：2022年02月13日 星期日 20时44分33秒
  *   描    述：
  *
  *================================================================*/
@@ -125,6 +125,27 @@ static void channels_comm_proxy_request_periodic(channels_info_t *channels_info)
 	for(j = 0; j < proxy_channel_number; j++) {
 		proxy_channel_item_t *proxy_channel_item = get_proxy_channel_item_by_proxy_channel_index(&channels_config->proxy_channel_info, j);
 		channels_comm_proxy_channel_ctx_t *channels_comm_proxy_channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + j;
+
+		uint8_t connect_timeout;
+
+		if(ticks_duration(ticks, channels_comm_proxy_get_connect_stamp(channels_info, j)) >= (10 * 1000)) {
+			connect_timeout = 1;
+		} else {
+			connect_timeout = 0;
+		}
+
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_CONNECT_TIMEOUT) != connect_timeout) {
+			set_fault(channel_info->faults, CHANNEL_FAULT_CONNECT_TIMEOUT, connect_timeout);
+
+			if(connect_timeout != 0) {
+				debug("channel %d(%d) timeout, ticks:%d, update stamp:%d",
+				      proxy_channel_item->channel_id,
+				      j,
+				      ticks,
+				      channels_comm_proxy_get_connect_stamp(channels_com_info, j));
+				start_stop_channel(channels_info, channel_info->channel_id, CHANNEL_EVENT_TYPE_STOP_CHANNEL);
+			}
+		}
 
 		for(i = 0; i < ARRAY_SIZE(channels_comm_proxy_command_table); i++) {
 			command_item_t *item = channels_comm_proxy_command_table[i];
@@ -473,10 +494,9 @@ int start_channels_comm_proxy_remote(channels_info_t *channels_info)
 		item->cmd_ctx = (command_status_t *)os_calloc(CHANNELS_COMM_PROXY_COMMAND_SIZE, sizeof(command_status_t));
 		OS_ASSERT(item->cmd_ctx != NULL);
 
-		item->cmd_ctx[CHANNELS_COMM_PROXY_COMMAND_PROXY_REMOTE_HEARTBEAT].available = 1;
-		item->cmd_ctx[CHANNELS_COMM_PROXY_COMMAND_PROXY_LOCAL_HEARTBEAT].available = 1;
-		item->cmd_ctx[CHANNELS_COMM_PROXY_COMMAND_PROXY_REMOTE_STATELESS].available = 1;
-		item->cmd_ctx[CHANNELS_COMM_PROXY_COMMAND_PROXY_LOCAL_STATELESS].available = 1;
+		item->cmd_ctx[channels_comm_proxy_command_enum(DAU_STATUS)].available = 1;
+		item->cmd_ctx[channels_comm_proxy_command_enum(MODULES_STATUS)].available = 1;
+		item->cmd_ctx[channels_comm_proxy_command_enum(INPUT_VOLTAGE)].available = 1;
 
 		for(j = 0; j < sizeof(channel_data_ctx->proxy_remote_heartbeat); j++) {
 			channel_data_ctx->proxy_remote_heartbeat.data[j] = j;
