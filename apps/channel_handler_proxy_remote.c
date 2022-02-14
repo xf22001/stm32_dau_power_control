@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月27日 星期一 09时22分16秒
- *   修改日期：2022年02月12日 星期六 20时43分14秒
+ *   修改日期：2022年02月14日 星期一 16时14分35秒
  *   描    述：
  *
  *================================================================*/
@@ -194,18 +194,37 @@ static void handle_channel_state(channel_info_t *channel_info)
 	}
 }
 
+#define CHANNEL_FAULT_DEBUG_PERIODIC 5000
+
 static void handle_channel_faults(channel_info_t *channel_info)
 {
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 	int fault;
 	uint8_t channel_faults = 0;
+	uint8_t log_enable = 0;
+	uint32_t ticks = osKernelSysTick();
 
 	//channels faults
 	fault = get_first_fault(channels_info->faults);
 
 	if(fault != -1) {
 		channel_faults = 1;
-		debug("channels fault:%s", get_channels_fault_des(fault));
+
+		if(channel_info->pre_channels_fault != fault) {
+			channel_info->pre_channels_fault = fault;
+			channel_info->pre_channel_fault_stamps = ticks;
+			log_enable = 1;
+		} else {
+			if(ticks_duration(ticks, channel_info->pre_channel_fault_stamps) >= CHANNEL_FAULT_DEBUG_PERIODIC) {
+				channel_info->pre_channel_fault_stamps = ticks;
+				log_enable = 1;
+			}
+		}
+
+		if(log_enable == 1) {
+			debug("channels fault:%s", get_channels_fault_des(fault));
+		}
+
 		goto exit;
 	}
 
@@ -214,7 +233,22 @@ static void handle_channel_faults(channel_info_t *channel_info)
 
 	if(fault != -1) {
 		channel_faults = 1;
-		debug("channel %d fault:%s", channel_info->channel_id, get_channel_fault_des(fault));
+
+		if(channel_info->pre_channel_fault != fault) {
+			channel_info->pre_channel_fault = fault;
+			channel_info->pre_channel_fault_stamps = ticks;
+			log_enable = 1;
+		} else {
+			if(ticks_duration(ticks, channel_info->pre_channel_fault_stamps) >= CHANNEL_FAULT_DEBUG_PERIODIC) {
+				channel_info->pre_channel_fault_stamps = ticks;
+				log_enable = 1;
+			}
+		}
+
+		if(log_enable == 1) {
+			debug("channel %d fault:%s", channel_info->channel_id, get_channel_fault_des(fault));
+		}
+
 		goto exit;
 	}
 
