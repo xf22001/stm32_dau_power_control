@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2022年02月11日 星期五 21时21分18秒
+ *   修改日期：2022年02月15日 星期二 13时46分16秒
  *   描    述：
  *
  *================================================================*/
@@ -275,49 +275,52 @@ static int channels_info_set_channels_config(channels_info_t *channels_info, cha
 	return ret;
 }
 
-__weak void power_manager_restore_config(channels_info_t *channels_info)
-{
-	int i;
-	int j;
-
-	channels_settings_t *channels_settings = &channels_info->channels_settings;
-	power_manager_settings_t *power_manager_settings = &channels_settings->power_manager_settings;
-
-	channels_info->channel_number = 0;
-
-	power_manager_settings->power_manager_group_number = POWER_MANAGER_GROUP_MAX_SIZE;
-
-	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
-		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
-		power_manager_group_settings->channel_number = GROUP_CHANNEL_MAX_SIZE;
-		power_manager_group_settings->power_module_group_number = POWER_MODULE_GROUP_MAX_SIZE;
-
-		channels_info->channel_number += power_manager_group_settings->channel_number;
-
-		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {
-			power_module_group_settings_t *power_module_group_settings = &power_manager_group_settings->power_module_group_settings[j];
-			power_module_group_settings->power_module_number = 1;
-		}
-	}
-}
-
 static void update_channels_config(channels_info_t *channels_info)
 {
 	int i;
+	int j;
 
 	channels_config_t *channels_config = channels_info->channels_config;
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
 	power_manager_settings_t *power_manager_settings = &channels_settings->power_manager_settings;
 	channel_config_t *channel_config_sz = NULL;
 
-	channels_config->channel_number = 0;
+	channels_info->channel_number = 0;
+	channels_info->relay_board_number = 0;
+	channels_info->power_module_number = 0;
+
+	//dau special ...
+	//channels_info->channel_number = channels_settings->channel_number;
+	//dau special ...
+
+	debug("power_manager_group_number:%d", power_manager_settings->power_manager_group_number);
 
 	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
 		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
 
-		channels_config->channel_number += power_manager_group_settings->channel_number;
+		//dau special ...
+		channels_info->channel_number += power_manager_group_settings->channel_number;
+		//dau special ...
+
+		channels_info->relay_board_number += power_manager_group_settings->relay_board_number_per_channel * power_manager_group_settings->channel_number;
+
+		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {
+			power_module_group_settings_t *power_module_group_settings = &power_manager_group_settings->power_module_group_settings[j];
+			channels_info->power_module_number += power_module_group_settings->power_module_number;
+		}
 	}
 
+	//dau special ...
+	channels_config->channel_number = channels_info->channel_number;
+	//dau special ...
+
+	OS_ASSERT(channels_info->channel_number <= channels_config->channel_number);
+
+	debug("channel_number:%d", channels_info->channel_number);
+	debug("relay_board_number:%d", channels_info->relay_board_number);
+	debug("power_module_number:%d", channels_info->power_module_number);
+
+	//dau special ...
 	channels_config->channel_config = os_calloc(channels_config->channel_number, sizeof(channel_config_t *));
 	channel_config_sz = os_calloc(channels_config->channel_number, sizeof(channel_config_t));
 
@@ -333,29 +336,8 @@ static void update_channels_config(channels_info_t *channels_info)
 
 		channels_config->channel_config[i] = channel_config_item;
 	}
-}
 
-static void update_power_module_config(channels_info_t *channels_info)
-{
-	int i;
-	int j;
-	uint8_t power_module_number = 0;
-
-	channels_config_t *channels_config = channels_info->channels_config;
-	channels_settings_t *channels_settings = &channels_info->channels_settings;
-	power_manager_settings_t *power_manager_settings = &channels_settings->power_manager_settings;
-
-	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
-		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
-
-		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {
-			power_module_group_settings_t *power_module_group_settings = &power_manager_group_settings->power_module_group_settings[j];
-			power_module_number += power_module_group_settings->power_module_number;
-		}
-	}
-
-	channels_config->power_module_config.power_module_number = power_module_number;
-	debug("channels_config->power_module_config.power_module_number:%d", channels_config->power_module_config.power_module_number);
+	//dau special ...
 }
 
 static void channels_info_reset_default_config(channels_info_t *channels_info)
@@ -364,8 +346,6 @@ static void channels_info_reset_default_config(channels_info_t *channels_info)
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
 
 	memset(channels_settings, 0, sizeof(channels_settings_t));
-
-	channels_settings->channel_number = channels_config->channel_number;
 
 	channels_settings->power_module_settings.power_module_type = channels_config->power_module_config.power_module_default_type;
 	channels_settings->power_module_settings.rate_current = 21;
@@ -402,8 +382,6 @@ static int channels_info_init_config(channels_info_t *channels_info)
 	}
 
 	update_channels_config(channels_info);
-
-	update_power_module_config(channels_info);
 
 	load_channels_display_cache(channels_info);
 

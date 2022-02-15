@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月16日 星期四 10时34分46秒
- *   修改日期：2022年02月14日 星期一 16时34分01秒
+ *   修改日期：2022年02月15日 星期二 13时56分45秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,7 @@
 #include "power_manager.h"
 #include "channel.h"
 
-//#define LOG_DISABLE
+#define LOG_DISABLE
 #include "log.h"
 
 typedef struct {
@@ -994,9 +994,7 @@ int start_channels_comm_proxy_remote(channels_info_t *channels_info)
 	power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
 	int i;
 
-	if(channels_info->channels_comm_proxy_ctx != NULL) {
-		return ret;
-	}
+	OS_ASSERT(channels_info->channels_comm_proxy_ctx == NULL);
 
 	init_channels_config_proxy_channel_info(channels_config);
 

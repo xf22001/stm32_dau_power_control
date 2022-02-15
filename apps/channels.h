@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2022年02月14日 星期一 16时14分40秒
+ *   修改日期：2022年02月15日 星期二 14时18分35秒
  *   描    述：
  *
  *================================================================*/
@@ -247,23 +247,35 @@ typedef struct {
 	uint8_t power_module_number;
 } power_module_group_settings_t;
 
-#if !defined(GROUP_CHANNEL_MAX_SIZE)
-#define GROUP_CHANNEL_MAX_SIZE 6
+//每功率管理组通道数
+#if !defined(DEFAULT_POWER_MANAGER_GROUP_CHANNEL_NUMBER)
+#define DEFAULT_POWER_MANAGER_GROUP_CHANNEL_NUMBER 6
 #endif
 
+//功率管理组内每通道dau模块数
+#if !defined(RELAY_BOARD_NUMBER_PER_CHANNEL_MAX)
+#define RELAY_BOARD_NUMBER_PER_CHANNEL_MAX 1
+#endif
+
+//每功率管理组电源模块组数
 #if !defined(POWER_MODULE_GROUP_MAX_SIZE)
 #define POWER_MODULE_GROUP_MAX_SIZE 8
 #endif
+
 typedef struct {
 	uint8_t power_manager_type;//power_manager_type_t
 	uint8_t channel_number;
+	uint8_t relay_board_number_per_channel;
+	uint8_t slot_per_relay_board[RELAY_BOARD_NUMBER_PER_CHANNEL_MAX];
 	uint8_t power_module_group_number;
 	power_module_group_settings_t power_module_group_settings[POWER_MODULE_GROUP_MAX_SIZE];
 } power_manager_group_settings_t;
 
+//功率管理组数
 #if !defined(POWER_MANAGER_GROUP_MAX_SIZE)
-#define POWER_MANAGER_GROUP_MAX_SIZE 2
+#define POWER_MANAGER_GROUP_MAX_SIZE 1
 #endif
+
 typedef struct {
 	uint8_t type;//power_manager_type_t
 	uint8_t power_manager_group_number;
@@ -276,7 +288,6 @@ typedef struct {
 
 typedef struct {
 	uint8_t authorize;
-	uint8_t channel_number;
 	uint8_t precharge_enable;
 	power_module_settings_t power_module_settings;
 	power_manager_settings_t power_manager_settings;
@@ -369,6 +380,9 @@ typedef struct {
 	uint32_t periodic_stamp;
 
 	uint8_t channel_number;
+	uint8_t relay_board_number;
+	uint8_t power_module_number;
+
 	channel_info_t *channel_info;
 	void *card_reader_info;
 	void *display_info;
@@ -388,6 +402,7 @@ typedef struct {
 	uint32_t electric_leakage_detect_b_stamps;
 
 	void *channels_comm_proxy_ctx;
+	void *relay_boards_comm_proxy_ctx;
 	void *power_manager_info;
 } channels_info_t;
 
@@ -402,7 +417,6 @@ int channels_info_save_config(channels_info_t *channels_info);
 void channels_modbus_data_action(void *fn_ctx, void *chain_ctx);
 void load_channels_display_cache(channels_info_t *channels_info);
 void sync_channels_display_cache(channels_info_t *channels_info);
-void power_manager_restore_config(channels_info_t *channels_info);
 channels_info_t *start_channels(void);
 channels_info_t *get_channels(void);
 

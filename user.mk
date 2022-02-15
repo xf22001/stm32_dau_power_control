@@ -6,7 +6,7 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2022年02月12日 星期六 14时56分55秒
+#   修改日期：2022年02月15日 星期二 14时12分09秒
 #   描    述：
 #
 #================================================================
@@ -132,10 +132,6 @@ USER_CFLAGS += -DCJSON_API_VISIBILITY -DCJSON_EXPORT_SYMBOLS -DENABLE_LOCALES -D
 
 #USER_CFLAGS += -DLOG_DISABLE
 #USER_CFLAGS += -DALLOC_TRACE_DISABLE
-
-USER_CFLAGS += -DPOWER_MANAGER_GROUP_MAX_SIZE=2
-USER_CFLAGS += -DGROUP_CHANNEL_MAX_SIZE=3
-USER_CFLAGS += -DPOWER_MODULE_GROUP_MAX_SIZE=6
 
 CFLAGS += $(USER_CFLAGS) $(CONFIG_CFLAGS)
 

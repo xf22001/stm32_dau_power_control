@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2022年02月13日 星期日 12时51分36秒
+ *   修改日期：2022年02月15日 星期二 13时38分07秒
  *   描    述：
  *
  *================================================================*/
@@ -492,7 +492,6 @@ void alloc_channels_channel_info(channels_info_t *channels_info)
 
 	OS_ASSERT(display_info != NULL);
 
-	channels_info->channel_number = channels_config->channel_number;
 	channel_info = (channel_info_t *)os_calloc(channels_info->channel_number, sizeof(channel_info_t));
 	OS_ASSERT(channel_info != NULL);
 	channels_info->channel_info = channel_info;
@@ -520,12 +519,6 @@ void alloc_channels_channel_info(channels_info_t *channels_info)
 			OS_ASSERT(register_callback(display_info->modbus_slave_info->data_changed_chain, &channel_info_item->display_data_changed_callback_item) == 0);
 		}
 	}
-
-	if(channels_info->channels_settings.channel_number > channels_info->channel_number) {
-		channels_info->channels_settings.channel_number = channels_info->channel_number;
-	}
-
-	channels_info->channel_number = channels_info->channels_settings.channel_number;
 
 	channels_info->periodic_callback_item.fn = handle_channels_common_periodic;
 	channels_info->periodic_callback_item.fn_ctx = channels_info;

@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2022年02月11日 星期五 21时23分41秒
+ *   修改日期：2022年02月15日 星期二 11时09分57秒
  *   描    述：
  *
  *================================================================*/
@@ -107,7 +107,6 @@ typedef struct {
 
 typedef struct {
 	uint8_t power_module_default_type;
-	uint8_t power_module_number;
 	void *hcan;
 } power_module_config_t;
 

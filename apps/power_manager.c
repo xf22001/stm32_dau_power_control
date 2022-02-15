@@ -6,7 +6,7 @@
  *   文件名称：power_manager.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分52秒
- *   修改日期：2022年02月12日 星期六 19时15分11秒
+ *   修改日期：2022年02月15日 星期二 14时09分55秒
  *   描    述：
  *
  *================================================================*/
@@ -318,12 +318,13 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 {
 	channels_info_t *channels_info = power_manager_info->channels_info;
 	power_manager_settings_t *power_manager_settings = &channels_info->channels_settings.power_manager_settings;
-	channels_config_t *channels_config = channels_info->channels_config;
 	int i;
 	int j;
 	int k;
 	uint8_t power_module_item_offset = 0;
 	uint8_t power_manager_channel_offset = 0;
+	uint8_t power_manager_relay_board_offset = 0;
+	uint8_t power_manager_relay_board_slot_offset_base = 0;
 
 	power_manager_info->power_manager_channel_module_assign_ready_chain = alloc_callback_chain();
 	OS_ASSERT(power_manager_info->power_manager_channel_module_assign_ready_chain != NULL);
@@ -335,14 +336,14 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 		return;
 	}
 
-	debug("power module number:%d", channels_config->power_module_config.power_module_number);
+	debug("power module number:%d", channels_info->power_module_number);
 
 	power_manager_info->power_module_item_info = (power_module_item_info_t *)os_calloc(
 	            power_manager_info->power_modules_info->power_module_number,
 	            sizeof(power_module_item_info_t));
 	OS_ASSERT(power_manager_info->power_module_item_info != NULL);
 
-	for(i = 0; i < channels_config->power_module_config.power_module_number; i++) {
+	for(i = 0; i < channels_info->power_module_number; i++) {
 		power_module_item_info_t *power_module_item_info = power_manager_info->power_module_item_info + i;
 
 		INIT_LIST_HEAD(&power_module_item_info->list);
@@ -354,18 +355,19 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 		OS_ASSERT(power_module_item_info->faults != NULL);
 	}
 
-	debug("channel number:%d", channels_config->channel_number);
+	debug("channel number:%d", channels_info->channel_number);
 
 	power_manager_info->power_manager_channel_info = os_calloc(
-	            channels_config->channel_number,
+	            channels_info->channel_number,
 	            sizeof(power_manager_channel_info_t));
 	OS_ASSERT(power_manager_info->power_manager_channel_info != NULL);
 
-	for(i = 0; i < channels_config->channel_number; i++) {
+	for(i = 0; i < channels_info->channel_number; i++) {
 		power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + i;
 
 		INIT_LIST_HEAD(&power_manager_channel_info->list);
 		INIT_LIST_HEAD(&power_manager_channel_info->power_module_group_list);
+		INIT_LIST_HEAD(&power_manager_channel_info->relay_board_list);
 		power_manager_channel_info->id = i;
 		power_manager_channel_info->power_manager_info = power_manager_info;
 	}
@@ -375,6 +377,14 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 	            sizeof(power_manager_group_info_t));
 	OS_ASSERT(power_manager_info->power_manager_group_info != NULL);
 
+	debug("relay board number:%d", channels_info->relay_board_number);
+
+	if(channels_info->relay_board_number != 0) {
+		power_manager_info->power_manager_relay_board_info = os_calloc(
+		            channels_info->relay_board_number,
+		            sizeof(power_manager_relay_board_info_t));
+		OS_ASSERT(power_manager_info->power_manager_relay_board_info != NULL);
+	}
 
 	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
 		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
@@ -433,13 +443,44 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 
 		for(j = 0; j < power_manager_group_settings->channel_number; j++) {
 			power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + power_manager_channel_offset;
+			uint8_t power_manager_relay_board_slot_offset = power_manager_relay_board_slot_offset_base;
+
+			if(power_manager_group_settings->relay_board_number_per_channel != 0) {
+				for(k = 0; k < power_manager_group_settings->relay_board_number_per_channel; k++) {
+					uint8_t slot_per_relay_board = power_manager_group_settings->slot_per_relay_board[k];
+					power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + power_manager_relay_board_offset;
+					power_manager_relay_board_info->id = power_manager_relay_board_offset;
+					power_manager_relay_board_info->channel_id = power_manager_channel_info->id;
+					power_manager_relay_board_info->offset = power_manager_relay_board_slot_offset;
+					power_manager_relay_board_info->number = slot_per_relay_board;
+
+					power_manager_relay_board_offset++;
+					power_manager_relay_board_slot_offset += slot_per_relay_board;
+
+					debug("add relay board %d offset %d, number:%d, to channel %d",
+					      power_manager_relay_board_info->id,
+					      power_manager_relay_board_info->offset,
+					      power_manager_relay_board_info->number,
+					      power_manager_channel_info->id);
+					list_add_tail(&power_manager_relay_board_info->list, &power_manager_channel_info->relay_board_list);
+				}
+			}
+
 			power_manager_channel_info->power_manager_group_info = power_manager_group_info;
 			debug("add channel %d to power manager group %d",
 			      power_manager_channel_info->id,
 			      power_manager_group_info->id);
 			list_add_tail(&power_manager_channel_info->list, &power_manager_group_info->channel_idle_list);
 			power_manager_channel_offset++;
-			OS_ASSERT(power_manager_channel_offset <= channels_config->channel_number);
+			OS_ASSERT(power_manager_channel_offset <= channels_info->channel_number);
+		}
+
+		if(power_manager_group_settings->relay_board_number_per_channel != 0) {
+			for(k = 0; k < power_manager_group_settings->relay_board_number_per_channel; k++) {
+				uint8_t slot_per_relay_board = power_manager_group_settings->slot_per_relay_board[k];
+
+				power_manager_relay_board_slot_offset_base += slot_per_relay_board;
+			}
 		}
 	}
 
@@ -469,6 +510,39 @@ void alloc_power_manager(channels_info_t *channels_info)
 		power_manager_info->power_manager_handler->init(power_manager_info);
 	} else {
 		debug("skip power_manager %s", get_power_manager_type_des(power_manager_settings->type));
+	}
+}
+
+__weak void power_manager_restore_config(channels_info_t *channels_info)
+{
+	int i;
+	int j;
+
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	power_manager_settings_t *power_manager_settings = &channels_settings->power_manager_settings;
+
+	power_manager_settings->power_manager_group_number = POWER_MANAGER_GROUP_MAX_SIZE;
+
+	debug("power_manager_group_number:%d", power_manager_settings->power_manager_group_number);
+
+	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
+		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
+
+		power_manager_group_settings->channel_number = DEFAULT_POWER_MANAGER_GROUP_CHANNEL_NUMBER;
+		power_manager_group_settings->relay_board_number_per_channel = RELAY_BOARD_NUMBER_PER_CHANNEL_MAX;
+
+		for(j = 0; j < power_manager_group_settings->relay_board_number_per_channel; j++) {
+			power_manager_group_settings->slot_per_relay_board[j] = 4;
+		}
+
+		power_manager_group_settings->power_module_group_number = POWER_MODULE_GROUP_MAX_SIZE;
+
+		channels_info->channel_number += power_manager_group_settings->channel_number;
+
+		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {
+			power_module_group_settings_t *power_module_group_settings = &power_manager_group_settings->power_module_group_settings[j];
+			power_module_group_settings->power_module_number = 1;
+		}
 	}
 }
 

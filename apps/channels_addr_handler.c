@@ -6,7 +6,7 @@
  *   文件名称：channels_addr_handler.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月16日 星期五 14时03分28秒
- *   修改日期：2021年07月16日 星期五 17时30分02秒
+ *   修改日期：2022年02月15日 星期二 13时45分58秒
  *   描    述：
  *
  *================================================================*/
@@ -25,7 +25,7 @@ void channels_modbus_data_action(void *fn_ctx, void *chain_ctx)
 
 	switch(modbus_data_ctx->addr) {
 		case 5: {//枪数设置	0：单枪 1：双枪
-			modbus_data_value_rw(modbus_data_ctx, channels_settings->channel_number);
+			modbus_data_value_r(modbus_data_ctx, channels_info->channel_number);
 		}
 		break;
 

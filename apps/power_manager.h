@@ -6,7 +6,7 @@
  *   文件名称：power_manager.h
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分56秒
- *   修改日期：2022年02月12日 星期六 19时15分12秒
+ *   修改日期：2022年02月15日 星期二 12时55分46秒
  *   描    述：
  *
  *================================================================*/
@@ -139,6 +139,7 @@ typedef enum {
 typedef struct {
 	struct list_head list;
 	struct list_head power_module_group_list;//关联的电源模块组
+	struct list_head relay_board_list;//关联的dau模块
 	uint8_t id;
 	void *power_manager_info;
 	void *power_manager_group_info;
@@ -146,6 +147,18 @@ typedef struct {
 	power_manager_channel_request_state_t request_state;
 	uint32_t state_change_stamp;
 } power_manager_channel_info_t;
+
+typedef struct {
+	struct list_head list;
+	uint8_t id;
+	uint8_t channel_id;
+	uint8_t offset;//当前dau模块在电源管理模块组的绝对偏移
+	uint8_t number;//当前dau模块有效位数
+	uint8_t config;//当前dau模块配置
+	uint8_t remote_config;//远端dau模块配置
+	int16_t temperature1;
+	int16_t temperature2;
+} power_manager_relay_board_info_t;
 
 typedef enum {
 	POWER_MANAGER_CHANGE_STATE_IDLE = 0,
@@ -216,6 +229,7 @@ typedef struct {
 	power_modules_info_t *power_modules_info;//模块信息
 	power_module_item_info_t *power_module_item_info;//模块分配信息
 	power_manager_channel_info_t *power_manager_channel_info;//通道分配信息
+	power_manager_relay_board_info_t *power_manager_relay_board_info;//dau模块分配信息
 	power_manager_group_info_t *power_manager_group_info;//电源管理组分配信息
 	power_manager_handler_t *power_manager_handler;
 	power_manager_group_policy_handler_t *power_manager_group_policy_handler;
@@ -231,6 +245,7 @@ char *get_power_manager_group_change_state_des(power_manager_change_state_t stat
 char *get_power_module_item_state_des(power_module_item_state_t state);
 void start_dump_channels_stats(void);
 void alloc_power_manager(channels_info_t *channels_info);
+void power_manager_restore_config(channels_info_t *channels_info);
 power_manager_group_policy_handler_t *get_power_manager_group_policy_handler(uint8_t policy);
 int set_power_manager_channel_request_state(power_manager_info_t *power_manager_info, uint8_t channel_id, power_manager_channel_request_state_t state);
 
