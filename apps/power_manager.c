@@ -6,7 +6,7 @@
  *   文件名称：power_manager.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分52秒
- *   修改日期：2022年02月15日 星期二 14时09分55秒
+ *   修改日期：2022年02月15日 星期二 19时39分54秒
  *   描    述：
  *
  *================================================================*/
@@ -182,7 +182,6 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 	int i;
 	int j;
 	channels_info_t *channels_info = power_manager_info->channels_info;
-	channels_config_t *channels_config = channels_info->channels_config;
 	struct list_head *head;
 	struct list_head *head1;
 
@@ -198,7 +197,7 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 
 	_printf("all channels:\n");
 
-	for(i = 0; i < channels_config->channel_number; i++) {
+	for(i = 0; i < channels_info->channel_number; i++) {
 		power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + i;
 		power_module_group_info_t *power_module_group_info;
 
@@ -365,11 +364,9 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 	for(i = 0; i < channels_info->channel_number; i++) {
 		power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + i;
 
-		INIT_LIST_HEAD(&power_manager_channel_info->list);
 		INIT_LIST_HEAD(&power_manager_channel_info->power_module_group_list);
 		INIT_LIST_HEAD(&power_manager_channel_info->relay_board_list);
 		power_manager_channel_info->id = i;
-		power_manager_channel_info->power_manager_info = power_manager_info;
 	}
 
 	power_manager_info->power_manager_group_info = (power_manager_group_info_t *)os_calloc(
@@ -450,7 +447,7 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 					uint8_t slot_per_relay_board = power_manager_group_settings->slot_per_relay_board[k];
 					power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + power_manager_relay_board_offset;
 					power_manager_relay_board_info->id = power_manager_relay_board_offset;
-					power_manager_relay_board_info->channel_id = power_manager_channel_info->id;
+					power_manager_relay_board_info->power_manager_channel_info = power_manager_channel_info;
 					power_manager_relay_board_info->offset = power_manager_relay_board_slot_offset;
 					power_manager_relay_board_info->number = slot_per_relay_board;
 
@@ -532,7 +529,7 @@ __weak void power_manager_restore_config(channels_info_t *channels_info)
 		power_manager_group_settings->relay_board_number_per_channel = RELAY_BOARD_NUMBER_PER_CHANNEL_MAX;
 
 		for(j = 0; j < power_manager_group_settings->relay_board_number_per_channel; j++) {
-			power_manager_group_settings->slot_per_relay_board[j] = 4;
+			power_manager_group_settings->slot_per_relay_board[j] = 6;
 		}
 
 		power_manager_group_settings->power_module_group_number = POWER_MODULE_GROUP_MAX_SIZE;
@@ -555,10 +552,9 @@ int set_power_manager_channel_request_state(power_manager_info_t *power_manager_
 {
 	int ret = 0;
 	channels_info_t *channels_info = power_manager_info->channels_info;
-	channels_config_t *channels_config = channels_info->channels_config;
 	power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + channel_id;
 
-	OS_ASSERT(channel_id < channels_config->channel_number);
+	OS_ASSERT(channel_id < channels_info->channel_number);
 
 	power_manager_channel_info->request_state = state;
 

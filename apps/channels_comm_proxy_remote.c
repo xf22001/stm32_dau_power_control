@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月16日 星期四 10时34分46秒
- *   修改日期：2022年02月15日 星期二 13时56分45秒
+ *   修改日期：2022年02月15日 星期二 17时13分07秒
  *   描    述：
  *
  *================================================================*/
@@ -871,7 +871,7 @@ static void channels_comm_proxy_response(channels_info_t *channels_info, can_rx_
 		command_item_t *item = channels_comm_proxy_command_table[i];
 		can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channels_comm_proxy_ctx->can_rx_msg->Data;
 
-		if(can_com_cmd_common->cmd == item->cmd) {
+		if(can_com_cmd_common->cmd == item->cmd_code) {
 			//debug("response channel %d(%d), cmd %d(%s), index:%d",
 			//      proxy_channel_item->channel_id,
 			//      proxy_channel_item->proxy_channel_index,

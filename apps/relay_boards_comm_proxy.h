@@ -6,7 +6,7 @@
  *   文件名称：relay_boards_comm_proxy.h
  *   创 建 者：肖飞
  *   创建日期：2022年02月15日 星期二 09时07分39秒
- *   修改日期：2022年02月15日 星期二 09时17分02秒
+ *   修改日期：2022年02月15日 星期二 17时09分52秒
  *   描    述：
  *
  *================================================================*/
@@ -63,5 +63,6 @@ typedef struct {
 
 #pragma pack(pop)
 
+char *get_relay_boards_comm_proxy_command_des(relay_board_cmd_t cmd);
 
 #endif //_RELAY_BOARDS_COMM_PROXY_H

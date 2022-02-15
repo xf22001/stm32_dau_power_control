@@ -6,7 +6,7 @@
  *   文件名称：power_manager_handler_native.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 15时40分30秒
- *   修改日期：2022年02月13日 星期日 12时21分50秒
+ *   修改日期：2022年02月15日 星期二 19时44分49秒
  *   描    述：
  *
  *================================================================*/
@@ -27,10 +27,10 @@ typedef struct {
 
 static void handle_power_manager_channel_state(power_manager_channel_info_t *power_manager_channel_info)
 {
-	power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_channel_info->power_manager_info;
+	power_manager_group_info_t *power_manager_group_info = (power_manager_group_info_t *)power_manager_channel_info->power_manager_group_info;
+	power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_group_info->power_manager_info;
 	channels_info_t *channels_info = power_manager_info->channels_info;
 	channel_info_t *channel_info = channels_info->channel_info + power_manager_channel_info->id;
-	power_manager_group_info_t *power_manager_group_info = (power_manager_group_info_t *)power_manager_channel_info->power_manager_group_info;
 	uint32_t ticks = osKernelSysTick();
 	power_manager_channel_info->status.require_output_voltage = 0;
 	power_manager_channel_info->status.require_output_current = 0;
@@ -41,7 +41,8 @@ static void handle_power_manager_channel_state(power_manager_channel_info_t *pow
 			if(power_manager_channel_info->request_state == POWER_MANAGER_CHANNEL_REQUEST_STATE_START) {//开机
 				power_manager_channel_info->status.module_ready_notify = 1;
 
-				if(power_manager_info->power_manager_group_policy_handler->channel_start != NULL) {
+				if((power_manager_info->power_manager_group_policy_handler != NULL) &&
+				   (power_manager_info->power_manager_group_policy_handler->channel_start != NULL)) {
 					power_manager_info->power_manager_group_policy_handler->channel_start(power_manager_channel_info);
 				}
 
@@ -136,7 +137,8 @@ static void handle_power_manager_channel_state(power_manager_channel_info_t *pow
 				power_manager_channel_info->status.state = POWER_MANAGER_CHANNEL_STATE_PREPARE_STOP;
 				debug("power manager channel %d to state %s", power_manager_channel_info->id, get_power_manager_channel_state_des(power_manager_channel_info->status.state));
 			} else {
-				if(power_manager_info->power_manager_group_policy_handler->channel_charging != NULL) {
+				if((power_manager_info->power_manager_group_policy_handler != NULL) &&
+				   (power_manager_info->power_manager_group_policy_handler->channel_charging != NULL)) {
 					power_manager_info->power_manager_group_policy_handler->channel_charging(power_manager_channel_info);
 				}
 			}
@@ -246,7 +248,8 @@ static void power_module_power_limit_correction(channels_settings_t *channels_se
 static void handle_power_manager_channel_power_module_group_info(power_manager_channel_info_t *power_manager_channel_info, uint16_t module_require_voltage, uint16_t module_group_require_current)
 {
 	power_module_group_info_t *power_module_group_info;
-	power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_channel_info->power_manager_info;
+	power_manager_group_info_t *power_manager_group_info = (power_manager_group_info_t *)power_manager_channel_info->power_manager_group_info;
+	power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_group_info->power_manager_info;
 	channels_info_t *channels_info = power_manager_info->channels_info;
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
 	struct list_head *head = &power_manager_channel_info->power_module_group_list;
@@ -872,7 +875,8 @@ static void handle_power_module_item_info_state(power_module_item_info_t *power_
 		case POWER_MODULE_ITEM_STATE_PREPARE_ACTIVE: {//准备启动模块组，根据情况预充
 			power_module_group_info_t *power_module_group_info = (power_module_group_info_t *)power_module_item_info->power_module_group_info;
 			power_manager_channel_info_t *power_manager_channel_info = (power_manager_channel_info_t *)power_module_group_info->power_manager_channel_info;
-			power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_channel_info->power_manager_info;
+			power_manager_group_info_t *power_manager_group_info = (power_manager_group_info_t *)power_manager_channel_info->power_manager_group_info;
+			power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_group_info->power_manager_info;
 			channels_info_t *channels_info = power_manager_info->channels_info;
 			channels_settings_t *channels_settings = &channels_info->channels_settings;
 			channel_info_t *channel_info = channels_info->channel_info + power_manager_channel_info->id;

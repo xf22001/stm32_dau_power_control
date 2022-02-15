@@ -6,7 +6,7 @@
 #   文件名称：config.mk
 #   创 建 者：肖飞
 #   创建日期：2021年08月26日 星期四 11时10分19秒
-#   修改日期：2022年02月12日 星期六 14时56分42秒
+#   修改日期：2022年02月15日 星期二 17时07分05秒
 #   描    述：
 #
 #================================================================
@@ -35,6 +35,8 @@ CONFIG_LIST += NET_CLIENT_REQUEST_SSE
 #CONFIG_LIST += CHARGER_CHANNEL_NATIVE
 CONFIG_LIST += CHARGER_CHANNEL_PROXY_REMOTE
 #CONFIG_LIST += CHARGER_CHANNEL_PROXY_LOCAL
+
+CONFIG_LIST += DAU_PROXY_REMOTE
 
 #CONFIG_LIST += CHARGER_BMS_HANDLER_GB
 #CONFIG_LIST += CHARGER_BMS_HANDLER_AC

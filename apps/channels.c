@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2022年02月15日 星期二 13时46分16秒
+ *   修改日期：2022年02月15日 星期二 16时05分58秒
  *   描    述：
  *
  *================================================================*/
@@ -307,18 +307,27 @@ static void update_channels_config(channels_info_t *channels_info)
 		for(j = 0; j < power_manager_group_settings->power_module_group_number; j++) {
 			power_module_group_settings_t *power_module_group_settings = &power_manager_group_settings->power_module_group_settings[j];
 			channels_info->power_module_number += power_module_group_settings->power_module_number;
+			debug("power manager group %d power module group %d power_module_number:%d",
+			      i,
+			      j,
+			      power_module_group_settings->power_module_number);
 		}
+
+		debug("power manager group %d channel_number:%d, relay_board_number:%d",
+		      i,
+		      power_manager_group_settings->channel_number,
+		      power_manager_group_settings->relay_board_number_per_channel * power_manager_group_settings->channel_number);
 	}
 
 	//dau special ...
 	channels_config->channel_number = channels_info->channel_number;
 	//dau special ...
 
-	OS_ASSERT(channels_info->channel_number <= channels_config->channel_number);
-
 	debug("channel_number:%d", channels_info->channel_number);
 	debug("relay_board_number:%d", channels_info->relay_board_number);
 	debug("power_module_number:%d", channels_info->power_module_number);
+
+	OS_ASSERT(channels_info->channel_number <= channels_config->channel_number);
 
 	//dau special ...
 	channels_config->channel_config = os_calloc(channels_config->channel_number, sizeof(channel_config_t *));

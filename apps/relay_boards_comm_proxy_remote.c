@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：relay_boards_comm_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2022年02月15日 星期二 08时45分38秒
- *   修改日期：2022年02月15日 星期二 09时55分21秒
+ *   修改日期：2022年02月15日 星期二 17时31分15秒
  *   描    述：
  *
  *================================================================*/
@@ -50,8 +50,6 @@ typedef int (*timeout_callback_t)(channels_info_t *channels_info, void *_command
 
 typedef struct {
 	uint8_t cmd;
-	uint8_t cmd_code;
-	uint8_t broadcast;
 	uint32_t request_period;
 	request_callback_t request_callback;
 	response_callback_t response_callback;
@@ -109,6 +107,7 @@ static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_i
 	uint32_t ticks = osKernelSysTick();
 	int i;
 	int j;
+	int k;
 
 	if(ticks_duration(ticks, relay_boards_comm_proxy_ctx->periodic_stamp) < 50) {
 		return;
@@ -117,9 +116,7 @@ static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_i
 	relay_boards_comm_proxy_ctx->periodic_stamp = ticks;
 
 	for(j = 0; j < proxy_channel_number; j++) {
-		proxy_channel_item_t *proxy_channel_item = get_proxy_channel_item_by_proxy_channel_index(&channels_config->proxy_channel_info, j);
 		relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + j;
-		channel_info_t *channel_info = (channel_info_t *)channels_info->channel_info + proxy_channel_item->channel_id;
 
 		uint8_t connect_timeout;
 
@@ -127,6 +124,11 @@ static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_i
 			connect_timeout = 1;
 		} else {
 			connect_timeout = 0;
+		}
+
+		for(k = 0; k < channels_info->channel_number; k++) {
+			if() {
+			}
 		}
 
 		if(get_fault(channel_info->faults, CHANNEL_FAULT_CONNECT_TIMEOUT) != connect_timeout) {
@@ -166,30 +168,8 @@ static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_i
 				}
 			}
 
-			if((item->cmd == relay_boards_comm_proxy_command_enum(CHANNEL_REQUIRE)) ||
-			   (item->cmd == relay_boards_comm_proxy_command_enum(CHANNEL_OUTPUT))) {
-				if(ticks_duration(ticks, cmd_ctx->recv_stamp) >= 1000) {
-					relay_boards_comm_proxy_set_connect_state(relay_boards_comm_proxy_ctx, j, 0);
-					debug("channel %d(%d), cmd %d(%s), index %d timeout, ticks:%d, recv_stamp:%d, connect state:%d",
-					      proxy_channel_item->channel_id,
-					      j,
-					      item->cmd,
-					      get_relay_boards_comm_proxy_command_des(item->cmd),
-					      cmd_ctx->index,
-					      ticks,
-					      cmd_ctx->recv_stamp,
-					      relay_boards_comm_proxy_get_connect_state(channels_info, j));
-				}
-			}
-
 			if(item->request_period == 0) {
 				continue;
-			}
-
-			if(item->broadcast != 0) {
-				if(j != 0) {
-					continue;
-				}
 			}
 
 			if(cmd_ctx->available == 0) {
@@ -260,7 +240,7 @@ static void relay_boards_comm_proxy_request(channels_info_t *channels_info, can_
 
 			memset(relay_boards_comm_proxy_ctx->can_tx_msg.Data, 0, 8);
 
-			can_com_cmd_common->cmd = item->cmd_code;
+			can_com_cmd_common->cmd = item->cmd;
 
 			ret = item->request_callback(channels_info, item, j);
 
@@ -279,10 +259,6 @@ static void relay_boards_comm_proxy_request(channels_info_t *channels_info, can_
 				      get_relay_boards_comm_proxy_command_des(item->cmd),
 				      can_com_cmd_common->index);
 				continue;
-			}
-
-			if(item->broadcast != 0) {
-				u_com_can_id->s.dst_id = 0x00;
 			}
 
 			cmd_ctx->send_stamp = ticks;
@@ -450,7 +426,7 @@ int start_relay_boards_comm_proxy_remote(channels_info_t *channels_info)
 	channels_config_t *channels_config = channels_info->channels_config;
 	int i;
 	power_manager_settings_t *power_manager_settings = &channels_info->channels_settings.power_manager_settings
-	uint8_t relay_board_number = 0;
+	        uint8_t relay_board_number = 0;
 
 	OS_ASSERT(channels_info->relay_boards_comm_proxy_ctx == NULL);
 

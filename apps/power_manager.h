@@ -6,7 +6,7 @@
  *   文件名称：power_manager.h
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分56秒
- *   修改日期：2022年02月15日 星期二 12时55分46秒
+ *   修改日期：2022年02月15日 星期二 19时35分44秒
  *   描    述：
  *
  *================================================================*/
@@ -141,7 +141,6 @@ typedef struct {
 	struct list_head power_module_group_list;//关联的电源模块组
 	struct list_head relay_board_list;//关联的dau模块
 	uint8_t id;
-	void *power_manager_info;
 	void *power_manager_group_info;
 	power_manager_channel_status_t status;
 	power_manager_channel_request_state_t request_state;
@@ -151,7 +150,7 @@ typedef struct {
 typedef struct {
 	struct list_head list;
 	uint8_t id;
-	uint8_t channel_id;
+	void *power_manager_channel_info;
 	uint8_t offset;//当前dau模块在电源管理模块组的绝对偏移
 	uint8_t number;//当前dau模块有效位数
 	uint8_t config;//当前dau模块配置
