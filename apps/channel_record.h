@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2022年02月13日 星期日 12时53分01秒
+ *   修改日期：2022年02月16日 星期三 10时47分05秒
  *   描    述：
  *
  *================================================================*/
@@ -45,7 +45,8 @@ typedef enum {
 	//channel fault
 	channel_record_item_stop_reason_fault(CHANNEL_FAULT_FAULT),
 	channel_record_item_stop_reason_fault(CHANNEL_FAULT_CONNECT_TIMEOUT),
-	channel_record_item_stop_reason_fault(CHANNEL_FAULT_RELAY_BOARD_OVER_TEMPERATURE),
+	channel_record_item_stop_reason_fault(CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_CONNECT_TIMEOUT),
+	channel_record_item_stop_reason_fault(CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_OVER_TEMPERATURE),
 
 	CHANNEL_RECORD_ITEM_STOP_REASON_UNKNOW,
 } channel_record_item_stop_reason_t;

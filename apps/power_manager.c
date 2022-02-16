@@ -6,7 +6,7 @@
  *   文件名称：power_manager.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分52秒
- *   修改日期：2022年02月15日 星期二 19时39分54秒
+ *   修改日期：2022年02月16日 星期三 14时35分37秒
  *   描    述：
  *
  *================================================================*/
@@ -98,7 +98,6 @@ char *get_power_module_item_state_des(power_module_item_state_t state)
 
 	return des;
 }
-
 
 static uint8_t dump_channels_stats = 0;
 
@@ -300,10 +299,94 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 	}
 }
 
-static void do_dump_power_manager_stats(void *fn_ctx, void *chain_ctx)
+static void handle_power_manager_group_faults(power_manager_info_t *power_manager_info)
 {
-	power_manager_info_t *power_manager_info = (power_manager_info_t *)fn_ctx;
+	int i;
+	int j;
+	channels_info_t *channels_info = power_manager_info->channels_info;
 
+	for(i = 0; i < channels_info->channel_number; i++) {
+		uint8_t relay_board_over_temperature = 0;
+
+		power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + i;
+		channel_info_t *channel_info = channels_info->channel_info + i;
+
+		for(j = 0; j < channels_info->relay_board_number; j++) {
+			power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + j;
+
+			if(power_manager_relay_board_info->power_manager_channel_info != power_manager_channel_info) {
+				continue;
+			}
+
+			if(get_fault(power_manager_relay_board_info->faults, POWER_MANAGER_RELAY_BOARD_FAULT_OVER_TEMPERATURE) == 1) {
+				relay_board_over_temperature = 1;
+				break;
+			}
+		}
+
+		set_fault(channel_info->faults, CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_OVER_TEMPERATURE, relay_board_over_temperature);
+	}
+
+	for(i = 0; i < power_manager_info->power_manager_group_number; i++) {
+		uint8_t relay_board_timeout = 0;
+		uint8_t relay_board_fault = 0;
+
+		power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + i;
+
+		//relay board
+		for(j = 0; j < channels_info->relay_board_number; j++) {
+			power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + j;
+			power_manager_channel_info_t *power_manager_channel_info = (power_manager_channel_info_t *)power_manager_relay_board_info->power_manager_channel_info;
+
+			if(power_manager_channel_info->power_manager_group_info != power_manager_group_info) {
+				continue;
+			}
+
+			if(get_fault(power_manager_relay_board_info->faults, POWER_MANAGER_RELAY_BOARD_FAULT_FAULT) == 1) {
+				relay_board_fault = 1;
+				break;
+			}
+
+			if(get_fault(power_manager_relay_board_info->faults, POWER_MANAGER_RELAY_BOARD_FAULT_CONNECT) == 1) {
+				relay_board_timeout = 1;
+				break;
+			}
+		}
+
+		if(get_fault(power_manager_group_info->faults, POWER_MANAGER_GROUP_FAULT_RELAY_BOARD_FAULT) != relay_board_fault) {
+			set_fault(power_manager_group_info->faults, POWER_MANAGER_GROUP_FAULT_RELAY_BOARD_FAULT, relay_board_fault);
+
+			for(j = 0; j < channels_info->channel_number; j++) {
+				power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + j;
+				channel_info_t *channel_info = channels_info->channel_info + j;
+
+				if(power_manager_channel_info->power_manager_group_info != power_manager_group_info) {
+					continue;
+				}
+
+				set_fault(channel_info->faults, CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_FAULT, relay_board_fault);
+			}
+		}
+
+		if(get_fault(power_manager_group_info->faults, POWER_MANAGER_GROUP_FAULT_RELAY_BOARD_CONNECT_TIMEOUT) != relay_board_timeout) {
+			set_fault(power_manager_group_info->faults, POWER_MANAGER_GROUP_FAULT_RELAY_BOARD_CONNECT_TIMEOUT, relay_board_timeout);
+
+			for(j = 0; j < channels_info->channel_number; j++) {
+				power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + j;
+				channel_info_t *channel_info = channels_info->channel_info + j;
+
+				if(power_manager_channel_info->power_manager_group_info != power_manager_group_info) {
+					continue;
+				}
+
+				set_fault(channel_info->faults, CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_CONNECT_TIMEOUT, relay_board_timeout);
+			}
+		}
+	}
+}
+
+static void do_dump_power_manager_stats(power_manager_info_t *power_manager_info)
+{
 	if(dump_channels_stats == 0) {
 		return;
 	}
@@ -311,6 +394,14 @@ static void do_dump_power_manager_stats(void *fn_ctx, void *chain_ctx)
 	dump_channels_stats = 0;
 
 	power_manager_debug(power_manager_info);
+}
+
+static void power_manager_periodic(void *fn_ctx, void *chain_ctx)
+{
+	power_manager_info_t *power_manager_info = (power_manager_info_t *)fn_ctx;
+
+	handle_power_manager_group_faults(power_manager_info);
+	do_dump_power_manager_stats(power_manager_info);
 }
 
 static void init_power_manager_group_info(power_manager_info_t *power_manager_info)
@@ -331,7 +422,7 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 	debug("power manager group number:%d", power_manager_settings->power_manager_group_number);
 	power_manager_info->power_manager_group_number = power_manager_settings->power_manager_group_number;
 
-	if(power_manager_settings->power_manager_group_number == 0) {
+	if(power_manager_info->power_manager_group_number == 0) {
 		return;
 	}
 
@@ -356,7 +447,7 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 
 	debug("channel number:%d", channels_info->channel_number);
 
-	power_manager_info->power_manager_channel_info = os_calloc(
+	power_manager_info->power_manager_channel_info = (power_manager_channel_info_t *)os_calloc(
 	            channels_info->channel_number,
 	            sizeof(power_manager_channel_info_t));
 	OS_ASSERT(power_manager_info->power_manager_channel_info != NULL);
@@ -370,22 +461,24 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 	}
 
 	power_manager_info->power_manager_group_info = (power_manager_group_info_t *)os_calloc(
-	            power_manager_settings->power_manager_group_number,
+	            power_manager_info->power_manager_group_number,
 	            sizeof(power_manager_group_info_t));
 	OS_ASSERT(power_manager_info->power_manager_group_info != NULL);
 
 	debug("relay board number:%d", channels_info->relay_board_number);
 
 	if(channels_info->relay_board_number != 0) {
-		power_manager_info->power_manager_relay_board_info = os_calloc(
+		power_manager_info->power_manager_relay_board_info = (power_manager_relay_board_info_t *)os_calloc(
 		            channels_info->relay_board_number,
 		            sizeof(power_manager_relay_board_info_t));
 		OS_ASSERT(power_manager_info->power_manager_relay_board_info != NULL);
 	}
 
-	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
+	for(i = 0; i < power_manager_info->power_manager_group_number; i++) {
 		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
 		power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + i;
+		power_manager_group_info->faults = alloc_bitmap(POWER_MANAGER_GROUP_FAULT_RELAY_SIZE);
+		OS_ASSERT(power_manager_group_info->faults != NULL);
 
 		power_manager_group_info->power_manager_info = power_manager_info;
 		power_manager_group_info->id = i;
@@ -446,6 +539,10 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 				for(k = 0; k < power_manager_group_settings->relay_board_number_per_channel; k++) {
 					uint8_t slot_per_relay_board = power_manager_group_settings->slot_per_relay_board[k];
 					power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + power_manager_relay_board_offset;
+
+					power_manager_relay_board_info->faults = alloc_bitmap(POWER_MANAGER_RELAY_BOARD_FAULT_SIZE);
+					OS_ASSERT(power_manager_relay_board_info->faults != NULL);
+
 					power_manager_relay_board_info->id = power_manager_relay_board_offset;
 					power_manager_relay_board_info->power_manager_channel_info = power_manager_channel_info;
 					power_manager_relay_board_info->offset = power_manager_relay_board_slot_offset;
@@ -481,9 +578,9 @@ static void init_power_manager_group_info(power_manager_info_t *power_manager_in
 		}
 	}
 
-	power_manager_info->dump_power_manager_stats_callback_item.fn = do_dump_power_manager_stats;
-	power_manager_info->dump_power_manager_stats_callback_item.fn_ctx = power_manager_info;
-	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &power_manager_info->dump_power_manager_stats_callback_item) == 0);
+	power_manager_info->power_manager_periodic_callback_item.fn = power_manager_periodic;
+	power_manager_info->power_manager_periodic_callback_item.fn_ctx = power_manager_info;
+	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &power_manager_info->power_manager_periodic_callback_item) == 0);
 }
 
 void alloc_power_manager(channels_info_t *channels_info)
@@ -508,6 +605,8 @@ void alloc_power_manager(channels_info_t *channels_info)
 	} else {
 		debug("skip power_manager %s", get_power_manager_type_des(power_manager_settings->type));
 	}
+
+	start_relay_boards_comm_proxy_remote(channels_info);
 }
 
 __weak void power_manager_restore_config(channels_info_t *channels_info)

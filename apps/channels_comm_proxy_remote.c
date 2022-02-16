@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月16日 星期四 10时34分46秒
- *   修改日期：2022年02月15日 星期二 17时13分07秒
+ *   修改日期：2022年02月16日 星期三 11时09分20秒
  *   描    述：
  *
  *================================================================*/
@@ -605,12 +605,10 @@ static void channels_comm_proxy_request_periodic(channels_info_t *channels_info)
 		channels_comm_proxy_channel_ctx_t *channels_comm_proxy_channel_ctx = channels_comm_proxy_ctx->channels_comm_proxy_channel_ctx + j;
 		channel_info_t *channel_info = (channel_info_t *)channels_info->channel_info + proxy_channel_item->channel_id;
 
-		uint8_t connect_timeout;
+		uint8_t connect_timeout = 0;
 
 		if(ticks_duration(ticks, channels_comm_proxy_get_connect_stamp(channels_info, j)) >= (3 * 1000)) {
 			connect_timeout = 1;
-		} else {
-			connect_timeout = 0;
 		}
 
 		if(get_fault(channel_info->faults, CHANNEL_FAULT_CONNECT_TIMEOUT) != connect_timeout) {

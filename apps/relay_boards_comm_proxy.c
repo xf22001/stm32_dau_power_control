@@ -6,11 +6,13 @@
  *   文件名称：relay_boards_comm_proxy.c
  *   创 建 者：肖飞
  *   创建日期：2022年02月15日 星期二 09时11分45秒
- *   修改日期：2022年02月15日 星期二 17时09分57秒
+ *   修改日期：2022年02月16日 星期三 14时48分36秒
  *   描    述：
  *
  *================================================================*/
 #include "relay_boards_comm_proxy.h"
+
+#include "os_utils.h"
 
 #define add_des_case_enum(x) add_des_case(x)
 

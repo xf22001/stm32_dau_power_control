@@ -6,7 +6,7 @@
  *   文件名称：channel_record.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分21秒
- *   修改日期：2022年02月14日 星期一 16时56分02秒
+ *   修改日期：2022年02月16日 星期三 10时48分31秒
  *   描    述：
  *
  *================================================================*/
@@ -36,7 +36,8 @@ char *get_channel_record_item_stop_reason_des(channel_record_item_stop_reason_t 
 			//channel fault
 			add_des_case_fault(channel_record_item_stop_reason_fault(CHANNEL_FAULT_FAULT));
 			add_des_case_fault(channel_record_item_stop_reason_fault(CHANNEL_FAULT_CONNECT_TIMEOUT));
-			add_des_case_fault(channel_record_item_stop_reason_fault(CHANNEL_FAULT_RELAY_BOARD_OVER_TEMPERATURE));
+			add_des_case_fault(channel_record_item_stop_reason_fault(CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_CONNECT_TIMEOUT));
+			add_des_case_fault(channel_record_item_stop_reason_fault(CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_OVER_TEMPERATURE));
 
 			add_des_case(CHANNEL_RECORD_ITEM_STOP_REASON_UNKNOW);
 

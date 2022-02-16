@@ -6,7 +6,7 @@
  *   文件名称：power_manager.h
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分56秒
- *   修改日期：2022年02月15日 星期二 19时35分44秒
+ *   修改日期：2022年02月16日 星期三 14时11分55秒
  *   描    述：
  *
  *================================================================*/
@@ -70,7 +70,6 @@ typedef enum {
 	POWER_MODULE_ITEM_FAULT_INPUT_OVER_VOLTAGE,
 	POWER_MODULE_ITEM_FAULT_SIZE,
 } power_module_item_fault_t;
-
 
 typedef struct {
 	struct list_head list;
@@ -147,6 +146,13 @@ typedef struct {
 	uint32_t state_change_stamp;
 } power_manager_channel_info_t;
 
+typedef enum {
+	POWER_MANAGER_RELAY_BOARD_FAULT_FAULT = 0,
+	POWER_MANAGER_RELAY_BOARD_FAULT_CONNECT,
+	POWER_MANAGER_RELAY_BOARD_FAULT_OVER_TEMPERATURE,
+	POWER_MANAGER_RELAY_BOARD_FAULT_SIZE,
+} power_manager_relay_board_fault_t;
+
 typedef struct {
 	struct list_head list;
 	uint8_t id;
@@ -157,6 +163,7 @@ typedef struct {
 	uint8_t remote_config;//远端dau模块配置
 	int16_t temperature1;
 	int16_t temperature2;
+	bitmap_t *faults;//power_manager_relay_board_fault_t
 } power_manager_relay_board_info_t;
 
 typedef enum {
@@ -170,6 +177,12 @@ typedef enum {
 	POWER_MANAGER_CHANGE_STATE_MODULE_ASSIGN_CONFIG,
 	POWER_MANAGER_CHANGE_STATE_MODULE_ASSIGN_CONFIG_SYNC,
 } power_manager_change_state_t;
+
+typedef enum {
+	POWER_MANAGER_GROUP_FAULT_RELAY_BOARD_FAULT = 0,
+	POWER_MANAGER_GROUP_FAULT_RELAY_BOARD_CONNECT_TIMEOUT,
+	POWER_MANAGER_GROUP_FAULT_RELAY_SIZE,
+} power_manager_group_fault_t;
 
 typedef struct {
 	uint8_t power_module_group_number;
@@ -189,6 +202,7 @@ typedef struct {
 	struct list_head power_module_group_disable_list;//电源模块组禁用列表
 
 	power_module_group_info_t *power_module_group_info;
+	bitmap_t *faults;//power_manager_group_fault_t
 } power_manager_group_info_t;//电源管理分组信息
 
 typedef int (*power_manager_handler_init_t)(void *_power_manager_info);
@@ -234,7 +248,7 @@ typedef struct {
 	power_manager_group_policy_handler_t *power_manager_group_policy_handler;
 	callback_chain_t *power_manager_channel_module_assign_ready_chain;
 	callback_item_t periodic_callback_item;
-	callback_item_t dump_power_manager_stats_callback_item;
+	callback_item_t power_manager_periodic_callback_item;
 	void *power_manager_ctx;
 	void *power_manager_group_policy_ctx;
 } power_manager_info_t;

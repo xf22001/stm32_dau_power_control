@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2022年02月15日 星期二 13时38分07秒
+ *   修改日期：2022年02月16日 星期三 15时02分09秒
  *   描    述：
  *
  *================================================================*/
@@ -85,8 +85,10 @@ char *get_channel_fault_des(channel_fault_t fault)
 	char *des = "unknow";
 
 	switch(fault) {
+			add_des_case(CHANNEL_FAULT_FAULT);
 			add_des_case(CHANNEL_FAULT_CONNECT_TIMEOUT);
-			add_des_case(CHANNEL_FAULT_RELAY_BOARD_OVER_TEMPERATURE);
+			add_des_case(CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_CONNECT_TIMEOUT);
+			add_des_case(CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_OVER_TEMPERATURE);
 
 		default: {
 		}
@@ -140,7 +142,8 @@ channel_record_item_stop_reason_t channel_fault_to_channel_record_item_stop_reas
 	switch(fault) {
 		add_fault_to_channel_record_item_stop_reason_case(CHANNEL_FAULT_FAULT);
 		add_fault_to_channel_record_item_stop_reason_case(CHANNEL_FAULT_CONNECT_TIMEOUT);
-		add_fault_to_channel_record_item_stop_reason_case(CHANNEL_FAULT_RELAY_BOARD_OVER_TEMPERATURE);
+		add_fault_to_channel_record_item_stop_reason_case(CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_CONNECT_TIMEOUT);
+		add_fault_to_channel_record_item_stop_reason_case(CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_OVER_TEMPERATURE);
 
 		default: {
 			return CHANNEL_RECORD_ITEM_STOP_REASON_UNKNOW;

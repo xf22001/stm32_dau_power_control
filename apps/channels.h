@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2022年02月15日 星期二 14时18分35秒
+ *   修改日期：2022年02月16日 星期三 15时01分35秒
  *   描    述：
  *
  *================================================================*/
@@ -90,7 +90,9 @@ typedef enum {
 typedef enum {
 	CHANNEL_FAULT_FAULT = 0,
 	CHANNEL_FAULT_CONNECT_TIMEOUT,
-	CHANNEL_FAULT_RELAY_BOARD_OVER_TEMPERATURE,
+	CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_FAULT,
+	CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_CONNECT_TIMEOUT,
+	CHANNEL_FAULT_POWER_MANAGER_RELAY_BOARD_OVER_TEMPERATURE,
 	CHANNEL_FAULT_SIZE,
 } channel_fault_t;
 
@@ -188,21 +190,11 @@ typedef struct {
 	callback_item_t display_data_changed_callback_item;
 
 	void *charger_info;
-	void *energy_meter_info;
-
 	uint16_t temperature_p_ad;
 	int16_t temperature_p;
 	uint16_t temperature_n_ad;
 	int16_t temperature_n;
-	uint16_t cp_ad;
-	uint16_t cp_ad_voltage;
-	uint16_t adhe_ad;
-	uint16_t adhe_ad_voltage;
 
-	uint16_t cp_pwm_duty;
-
-	uint32_t total_energy;//0.0001kwh==0.1wh
-	uint32_t total_energy_base;//0.0001kwh
 	uint32_t voltage;//0.1v
 	uint32_t current;//0.1a
 	uint32_t power;//0.1w
@@ -218,8 +210,6 @@ typedef struct {
 
 	channel_event_start_t *channel_event_start;
 	channel_event_start_t channel_event_start_display;
-	channel_event_start_t channel_event_start_net_client;
-	channel_event_start_t channel_event_start_bms;
 
 	channel_event_stop_t channel_event_stop;
 

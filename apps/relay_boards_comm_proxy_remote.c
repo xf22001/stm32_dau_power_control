@@ -6,7 +6,7 @@
  *   文件名称：relay_boards_comm_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2022年02月15日 星期二 08时45分38秒
- *   修改日期：2022年02月15日 星期二 17时31分15秒
+ *   修改日期：2022年02月16日 星期三 14时49分29秒
  *   描    述：
  *
  *================================================================*/
@@ -19,12 +19,16 @@
 #include "can_command.h"
 #include "can_data_task.h"
 #include "can_data_task.h"
-#include "channel.h"
+#include "power_manager.h"
 
-//#define LOG_DISABLE
+#define LOG_DISABLE
 #include "log.h"
 
 typedef struct {
+	relay_board_heartbeat_t relay_board_heartbeat;
+	relay_boards_heartbeat_t relay_boards_heartbeat;
+	relay_board_config_t relay_board_config;
+	relay_board_status_t relay_board_status;
 } relay_board_data_ctx_t;
 
 typedef struct {
@@ -71,30 +75,311 @@ static int timeout_callback_proxy_null(channels_info_t *channels_info, void *_co
 	return 0;
 }
 
+static int request_relay_board_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t relay_board_id)
+{
+	int ret = -1;
+
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	command_item_t *item = (command_item_t *)_command_item;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + item->cmd;
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)relay_boards_comm_proxy_ctx->can_tx_msg.Data;
+
+	//debug("relay_board_id:%d", relay_board_id);
+
+	ret = can_com_prepare_tx_response(cmd_ctx,
+	                                  can_com_cmd_response,
+	                                  sizeof(data_ctx->relay_board_heartbeat));
+
+	if(can_com_cmd_response->response_status == CAN_COM_RESPONSE_STATUS_DONE) {
+		int i;
+
+		for(i = 0; i < sizeof(data_ctx->relay_board_heartbeat); i++) {
+			if(data_ctx->relay_board_heartbeat.buffer[i] != i) {
+				debug("relay_board %d relay_board_heartbeat data[%d] == %d",
+				      relay_board_id,
+				      i,
+				      data_ctx->relay_board_heartbeat.buffer[i]);
+				break;
+			}
+		}
+
+		//_hexdump("relay_board_heartbeat",
+		//         (const char *)&data_ctx->relay_board_heartbeat,
+		//         sizeof(data_ctx->relay_board_heartbeat));
+	}
+
+	return ret;
+}
+
+static int response_relay_board_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t relay_board_id)
+{
+	int ret = -1;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	command_item_t *item = (command_item_t *)_command_item;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + item->cmd;
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_boards_comm_proxy_ctx->can_rx_msg->Data;
+
+	ret = can_com_process_rx_request(cmd_ctx,
+	                                 can_com_cmd_common,
+	                                 (uint8_t *)data_ctx->relay_board_heartbeat.buffer,
+	                                 sizeof(data_ctx->relay_board_heartbeat));
+
+	return ret;
+}
+
+static command_item_t command_item_relay_board_heartbeat = {
+	.cmd = relay_boards_comm_proxy_command_enum(RELAY_BOARD_HEARTBEAT),
+	.request_period = 0,
+	.request_callback = request_relay_board_heartbeat,
+	.response_callback = response_relay_board_heartbeat,
+	.timeout_callback = timeout_callback_proxy_null,
+};
+
+static int request_relay_boards_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t relay_board_id)
+{
+	int ret = -1;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	command_item_t *item = (command_item_t *)_command_item;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + item->cmd;
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_boards_comm_proxy_ctx->can_tx_msg.Data;
+
+	if(cmd_ctx->index == 0) {
+	}
+
+	ret = can_com_prepare_tx_request(cmd_ctx,
+	                                 can_com_cmd_common,
+	                                 (uint8_t *)&data_ctx->relay_boards_heartbeat,
+	                                 sizeof(data_ctx->relay_boards_heartbeat));
+
+	return ret;
+}
+
+static int response_relay_boards_heartbeat(channels_info_t *channels_info, void *_command_item, uint8_t relay_board_id)
+{
+	int ret = -1;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	command_item_t *item = (command_item_t *)_command_item;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + item->cmd;
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)relay_boards_comm_proxy_ctx->can_rx_msg->Data;
+
+	ret = can_com_process_rx_response(cmd_ctx,
+	                                  can_com_cmd_response,
+	                                  sizeof(data_ctx->relay_boards_heartbeat));
+
+	if(cmd_ctx->state == COMMAND_STATE_IDLE) {
+	}
+
+	return ret;
+}
+
+static command_item_t command_item_relay_boards_heartbeat = {
+	.cmd = relay_boards_comm_proxy_command_enum(RELAY_BOARDS_HEARTBEAT),
+	.request_period = 500,
+	.request_callback = request_relay_boards_heartbeat,
+	.response_callback = response_relay_boards_heartbeat,
+	.timeout_callback = timeout_callback_proxy_null,
+};
+
+int relay_boards_comm_update_config(channels_info_t *channels_info, uint8_t relay_board_id, uint8_t config)
+{
+	int ret = -1;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + relay_boards_comm_proxy_command_enum(RELAY_BOARDS_CONFIG);
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	power_manager_info_t *power_manager_info = channels_info->power_manager_info;
+	power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + relay_board_id;
+
+	debug("relay_board_id:%d, config:%02x", relay_board_id, config);
+
+	if(relay_board_id >= channels_info->relay_board_number) {
+		return ret;
+	}
+
+	data_ctx->relay_board_config.config = config;
+	power_manager_relay_board_info->remote_config = ~config;
+	cmd_ctx->state = COMMAND_STATE_REQUEST;
+
+	ret = 0;
+
+	return ret;
+}
+
+static int request_relay_boards_config(channels_info_t *channels_info, void *_command_item, uint8_t relay_board_id)
+{
+	int ret = -1;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	command_item_t *item = (command_item_t *)_command_item;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + item->cmd;
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_boards_comm_proxy_ctx->can_tx_msg.Data;
+
+	ret = can_com_prepare_tx_request(cmd_ctx,
+	                                 can_com_cmd_common,
+	                                 (uint8_t *)&data_ctx->relay_board_config,
+	                                 sizeof(data_ctx->relay_board_config));
+
+	return ret;
+}
+
+static int response_relay_boards_config(channels_info_t *channels_info, void *_command_item, uint8_t relay_board_id)
+{
+	int ret = -1;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	command_item_t *item = (command_item_t *)_command_item;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + item->cmd;
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)relay_boards_comm_proxy_ctx->can_rx_msg->Data;
+
+	ret = can_com_process_rx_response(cmd_ctx,
+	                                  can_com_cmd_response,
+	                                  sizeof(data_ctx->relay_board_config));
+
+	if(cmd_ctx->state == COMMAND_STATE_IDLE) {
+	}
+
+	return ret;
+}
+
+static command_item_t command_item_relay_boards_config = {
+	.cmd = relay_boards_comm_proxy_command_enum(RELAY_BOARDS_CONFIG),
+	.request_period = 0,
+	.request_callback = request_relay_boards_config,
+	.response_callback = response_relay_boards_config,
+};
+
+static int request_relay_board_status(channels_info_t *channels_info, void *_command_item, uint8_t relay_board_id)
+{
+	int ret = -1;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	command_item_t *item = (command_item_t *)_command_item;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + item->cmd;
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)relay_boards_comm_proxy_ctx->can_tx_msg.Data;
+
+	ret = can_com_prepare_tx_response(cmd_ctx,
+	                                  can_com_cmd_response,
+	                                  sizeof(data_ctx->relay_board_status));
+
+	if(can_com_cmd_response->response_status == CAN_COM_RESPONSE_STATUS_DONE) {
+		power_manager_info_t *power_manager_info = channels_info->power_manager_info;
+		power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + relay_board_id;
+		relay_board_status_t *relay_board_status = &data_ctx->relay_board_status;
+
+		//debug("relay_board_id %d status: config %02x, temperature1:%d, temperature2:%d, fault:%d, over_temperature:%d",
+		//      relay_board_id,
+		//      relay_board_status->config,
+		//      relay_board_status->temperature1,
+		//      relay_board_status->temperature2,
+		//      relay_board_status->fault.fault,
+		//      relay_board_status->fault.over_temperature);
+
+		power_manager_relay_board_info->temperature1 = relay_board_status->temperature1;
+		power_manager_relay_board_info->temperature2 = relay_board_status->temperature2;
+
+		if(power_manager_relay_board_info->remote_config != relay_board_status->config) {
+			power_manager_relay_board_info->remote_config = relay_board_status->config;
+			debug("relay_board_id %d update remote config %02x",
+			      relay_board_id,
+			      power_manager_relay_board_info->remote_config);
+
+			if(power_manager_relay_board_info->config != power_manager_relay_board_info->remote_config) {
+				debug("relay_board_id %d config %02x != remote config %02x",
+				      relay_board_id,
+				      power_manager_relay_board_info->config,
+				      power_manager_relay_board_info->remote_config);
+			}
+		}
+
+		if(get_fault(power_manager_relay_board_info->faults, POWER_MANAGER_RELAY_BOARD_FAULT_FAULT) != relay_board_status->fault.fault) {
+			set_fault(power_manager_relay_board_info->faults, POWER_MANAGER_RELAY_BOARD_FAULT_FAULT, relay_board_status->fault.fault);
+
+			if(relay_board_status->fault.fault != 0) {
+				debug("relay_board_id %d fault:%d",
+				      relay_board_id,
+				      relay_board_status->fault.fault);
+			}
+		}
+
+		if(get_fault(power_manager_relay_board_info->faults, POWER_MANAGER_RELAY_BOARD_FAULT_OVER_TEMPERATURE) != relay_board_status->fault.over_temperature) {
+			set_fault(power_manager_relay_board_info->faults, POWER_MANAGER_RELAY_BOARD_FAULT_OVER_TEMPERATURE, relay_board_status->fault.over_temperature);
+
+			if(relay_board_status->fault.over_temperature != 0) {
+				debug("relay_board_id %d over_temperature:%d",
+				      relay_board_id,
+				      relay_board_status->fault.over_temperature);
+			}
+		}
+
+	}
+
+	return ret;
+}
+
+static int response_relay_board_status(channels_info_t *channels_info, void *_command_item, uint8_t relay_board_id)
+{
+	int ret = -1;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
+	command_item_t *item = (command_item_t *)_command_item;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	command_status_t *cmd_ctx = relay_boards_comm_proxy_relay_board_ctx->cmd_ctx + item->cmd;
+	relay_board_data_ctx_t *data_ctx = &relay_boards_comm_proxy_relay_board_ctx->data_ctx;
+	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_boards_comm_proxy_ctx->can_rx_msg->Data;
+
+	ret = can_com_process_rx_request(cmd_ctx,
+	                                 can_com_cmd_common,
+	                                 (uint8_t *)&data_ctx->relay_board_status,
+	                                 sizeof(data_ctx->relay_board_status));
+
+	return ret;
+}
+
+static command_item_t command_item_relay_board_status = {
+	.cmd = relay_boards_comm_proxy_command_enum(RELAY_BOARD_STATUS),
+	.request_period = 0,
+	.request_callback = request_relay_board_status,
+	.response_callback = response_relay_board_status,
+};
+
 static command_item_t *relay_boards_comm_proxy_command_table[] = {
+	&command_item_relay_board_heartbeat,
+	&command_item_relay_boards_heartbeat,
+	&command_item_relay_boards_config,
+	&command_item_relay_board_status,
 };
 
 static void relay_boards_comm_proxy_set_connect_state(relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx, uint8_t relay_board_id, uint8_t state)
 {
-	relay_boards_comm_proxy_relay_board_ctx_t *channel_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
 
-	update_connect_state(&channel_ctx->connect_state, state);
+	update_connect_state(&relay_board_ctx->connect_state, state);
 }
 
 uint8_t relay_boards_comm_proxy_get_connect_state(channels_info_t *channels_info, uint8_t relay_board_id)
 {
 	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
-	relay_boards_comm_proxy_relay_board_ctx_t *channel_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
 
-	return get_connect_state(&channel_ctx->connect_state);
+	return get_connect_state(&relay_board_ctx->connect_state);
 }
 
 uint32_t relay_boards_comm_proxy_get_connect_stamp(channels_info_t *channels_info, uint8_t relay_board_id)
 {
 	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
-	relay_boards_comm_proxy_relay_board_ctx_t *channel_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
+	relay_boards_comm_proxy_relay_board_ctx_t *relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + relay_board_id;
 
-	return get_connect_stamp(&channel_ctx->connect_state);
+	return get_connect_stamp(&relay_board_ctx->connect_state);
 }
 
 #define RESPONSE_TIMEOUT 200
@@ -102,12 +387,10 @@ uint32_t relay_boards_comm_proxy_get_connect_stamp(channels_info_t *channels_inf
 static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_info)
 {
 	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
-	channels_config_t *channels_config = channels_info->channels_config;
-	uint8_t proxy_channel_number = channels_config->proxy_channel_info.proxy_channel_number;
+	power_manager_info_t *power_manager_info = channels_info->power_manager_info;
 	uint32_t ticks = osKernelSysTick();
 	int i;
 	int j;
-	int k;
 
 	if(ticks_duration(ticks, relay_boards_comm_proxy_ctx->periodic_stamp) < 50) {
 		return;
@@ -115,28 +398,21 @@ static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_i
 
 	relay_boards_comm_proxy_ctx->periodic_stamp = ticks;
 
-	for(j = 0; j < proxy_channel_number; j++) {
+	for(j = 0; j < channels_info->relay_board_number; j++) {
 		relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + j;
+		power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + j;
 
-		uint8_t connect_timeout;
+		uint8_t connect_timeout = 0;
 
 		if(ticks_duration(ticks, relay_boards_comm_proxy_get_connect_stamp(channels_info, j)) >= (3 * 1000)) {
 			connect_timeout = 1;
-		} else {
-			connect_timeout = 0;
 		}
 
-		for(k = 0; k < channels_info->channel_number; k++) {
-			if() {
-			}
-		}
-
-		if(get_fault(channel_info->faults, CHANNEL_FAULT_CONNECT_TIMEOUT) != connect_timeout) {
-			set_fault(channel_info->faults, CHANNEL_FAULT_CONNECT_TIMEOUT, connect_timeout);
+		if(get_fault(power_manager_relay_board_info->faults, CHANNEL_FAULT_CONNECT_TIMEOUT) != connect_timeout) {
+			set_fault(power_manager_relay_board_info->faults, CHANNEL_FAULT_CONNECT_TIMEOUT, connect_timeout);
 
 			if(connect_timeout != 0) {
-				debug("channel %d(%d) timeout, ticks:%d, update stamp:%d",
-				      proxy_channel_item->channel_id,
+				debug("relay board %d timeout, ticks:%d, update stamp:%d",
 				      j,
 				      ticks,
 				      relay_boards_comm_proxy_get_connect_stamp(channels_info, j));
@@ -150,8 +426,7 @@ static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_i
 			if(cmd_ctx->state == COMMAND_STATE_RESPONSE) {//超时
 				if(ticks_duration(ticks, cmd_ctx->send_stamp) >= RESPONSE_TIMEOUT) {
 					relay_boards_comm_proxy_set_connect_state(relay_boards_comm_proxy_ctx, j, 0);
-					debug("channel %d(%d), cmd %d(%s), index %d timeout, ticks:%d, send_stamp:%d, connect state:%d",
-					      proxy_channel_item->channel_id,
+					debug("relay board %d, cmd %d(%s), index %d timeout, ticks:%d, send_stamp:%d, connect state:%d",
 					      j,
 					      item->cmd,
 					      get_relay_boards_comm_proxy_command_des(item->cmd),
@@ -186,8 +461,7 @@ static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_i
 				cmd_ctx->index = 0;
 				cmd_ctx->state = COMMAND_STATE_REQUEST;
 
-				debug("channel %d(%d), cmd %d(%s), index %d start",
-				      proxy_channel_item->channel_id,
+				debug("relay board %d, cmd %d(%s), index %d start",
 				      j,
 				      item->cmd,
 				      get_relay_boards_comm_proxy_command_des(item->cmd),
@@ -201,14 +475,11 @@ static void relay_boards_comm_proxy_request_periodic(channels_info_t *channels_i
 static void relay_boards_comm_proxy_request(channels_info_t *channels_info, can_info_t *can_info)
 {
 	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
-	channels_config_t *channels_config = channels_info->channels_config;
-	uint8_t proxy_channel_number = channels_config->proxy_channel_info.proxy_channel_number;
 	int i;
 	int j;
 	int ret;
 
-	for(j = 0; j < proxy_channel_number; j++) {
-		proxy_channel_item_t *proxy_channel_item = get_proxy_channel_item_by_proxy_channel_index(&channels_config->proxy_channel_info, j);
+	for(j = 0; j < channels_info->relay_board_number; j++) {
 		relay_boards_comm_proxy_relay_board_ctx_t *relay_boards_comm_proxy_relay_board_ctx = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + j;
 
 		for(i = 0; i < ARRAY_SIZE(relay_boards_comm_proxy_command_table); i++) {
@@ -229,10 +500,10 @@ static void relay_boards_comm_proxy_request(channels_info_t *channels_info, can_
 			}
 
 			u_com_can_id->v = 0;
-			u_com_can_id->s.type = PROXY_TYPE_CHANNEL;
-			u_com_can_id->s.flag = PROXY_FLAG_CHANNEL;
-			u_com_can_id->s.src_id = PROXY_ADDR_REMOTE_CHANNEL;
-			u_com_can_id->s.dst_id = proxy_channel_item->channel_id + 1;
+			u_com_can_id->s.type = PROXY_TYPE_RELAY_BOARD;
+			u_com_can_id->s.flag = PROXY_FLAG_RELAY_BOARD;
+			u_com_can_id->s.src_id = PROXY_ADDR_REMOTE_RELAY_BOARD;
+			u_com_can_id->s.dst_id = j + 1;
 
 			relay_boards_comm_proxy_ctx->can_tx_msg.IDE = CAN_ID_EXT;
 			relay_boards_comm_proxy_ctx->can_tx_msg.RTR = CAN_RTR_DATA;
@@ -244,16 +515,14 @@ static void relay_boards_comm_proxy_request(channels_info_t *channels_info, can_
 
 			ret = item->request_callback(channels_info, item, j);
 
-			//debug("request channel %d(%d), cmd %d(%s), index:%d",
-			//      proxy_channel_item->channel_id,
+			//debug("request relay board %d, cmd %d(%s), index:%d",
 			//      j,
 			//      item->cmd,
 			//      get_relay_boards_comm_proxy_command_des(item->cmd),
 			//      can_com_cmd_common->index);
 
 			if(ret != 0) {
-				debug("process channel %d(%d), cmd %d(%s), index %d error!",
-				      proxy_channel_item->channel_id,
+				debug("process relay board %d, cmd %d(%s), index %d error!",
 				      j,
 				      item->cmd,
 				      get_relay_boards_comm_proxy_command_des(item->cmd),
@@ -269,8 +538,7 @@ static void relay_boards_comm_proxy_request(channels_info_t *channels_info, can_
 				cmd_ctx->state = COMMAND_STATE_REQUEST;
 				cmd_ctx->send_error = 1;
 
-				debug("send channel %d(%d), cmd %d(%s), index:%d error!",
-				      proxy_channel_item->channel_id,
+				debug("send relay board %d, cmd %d(%s), index:%d error!",
 				      j,
 				      item->cmd,
 				      get_relay_boards_comm_proxy_command_des(item->cmd),
@@ -284,29 +552,26 @@ static void relay_boards_comm_proxy_request(channels_info_t *channels_info, can_
 static void relay_boards_comm_proxy_response(channels_info_t *channels_info, can_rx_msg_t *can_rx_msg)
 {
 	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)channels_info->relay_boards_comm_proxy_ctx;
-	channels_config_t *channels_config = channels_info->channels_config;
-	uint8_t proxy_channel_number = channels_config->proxy_channel_info.proxy_channel_number;
 	int i;
 	u_com_can_id_t *u_com_can_id;
-	uint8_t channel_id;
-	proxy_channel_item_t *proxy_channel_item;
+	uint8_t relay_board_id;
 	int ret;
 
 	relay_boards_comm_proxy_ctx->can_rx_msg = can_rx_msg;
 
 	u_com_can_id = (u_com_can_id_t *)&can_rx_msg->ExtId;
 
-	if(u_com_can_id->s.type != PROXY_TYPE_CHANNEL) {
+	if(u_com_can_id->s.type != PROXY_TYPE_RELAY_BOARD) {
 		//debug("response type:%02x!", u_com_can_id->s.type);
 		return;
 	}
 
-	if(u_com_can_id->s.flag != PROXY_FLAG_CHANNEL) {
+	if(u_com_can_id->s.flag != PROXY_FLAG_RELAY_BOARD) {
 		//debug("response flag:%02x!", u_com_can_id->s.flag);
 		return;
 	}
 
-	if(u_com_can_id->s.dst_id != PROXY_ADDR_REMOTE_CHANNEL) {
+	if(u_com_can_id->s.dst_id != PROXY_ADDR_REMOTE_RELAY_BOARD) {
 		//debug("response dst_id:%02x!", u_com_can_id->s.dst_id);
 		//debug("rx extid:0x%08x, data:%02x %02x %02x %02x %02x %02x %02x %02x\n",
 		//      can_rx_msg->ExtId,
@@ -321,31 +586,10 @@ static void relay_boards_comm_proxy_response(channels_info_t *channels_info, can
 		return;
 	}
 
-	channel_id = u_com_can_id->s.src_id - 1;
+	relay_board_id = u_com_can_id->s.src_id - 1;
 
-	if(channel_id >= channels_info->channel_number) {
-		debug("channel_id:%d!", channel_id);
-		//debug("rx extid:0x%08x, data:%02x %02x %02x %02x %02x %02x %02x %02x\n",
-		//      can_rx_msg->ExtId,
-		//      can_rx_msg->Data[0],
-		//      can_rx_msg->Data[1],
-		//      can_rx_msg->Data[2],
-		//      can_rx_msg->Data[3],
-		//      can_rx_msg->Data[4],
-		//      can_rx_msg->Data[5],
-		//      can_rx_msg->Data[6],
-		//      can_rx_msg->Data[7]);
-		return;
-	}
-
-	proxy_channel_item = get_proxy_channel_item_by_channel_id(&channels_config->proxy_channel_info, channel_id);
-
-	if(proxy_channel_item == NULL) {
-		return;
-	}
-
-	if(proxy_channel_item->relay_board_id >= proxy_channel_number) {
-		debug("relay_board_id:%d!", proxy_channel_item->relay_board_id);
+	if(relay_board_id >= channels_info->relay_board_number) {
+		debug("relay_board_id:%d!", relay_board_id);
 		//debug("rx extid:0x%08x, data:%02x %02x %02x %02x %02x %02x %02x %02x\n",
 		//      can_rx_msg->ExtId,
 		//      can_rx_msg->Data[0],
@@ -364,21 +608,19 @@ static void relay_boards_comm_proxy_response(channels_info_t *channels_info, can
 		can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_boards_comm_proxy_ctx->can_rx_msg->Data;
 
 		if(can_com_cmd_common->cmd == item->cmd) {
-			//debug("response channel %d(%d), cmd %d(%s), index:%d",
-			//      proxy_channel_item->channel_id,
-			//      proxy_channel_item->relay_board_id,
+			//debug("response relay board %d, cmd %d(%s), index:%d",
+			//      relay_board_id,
 			//      item->cmd,
 			//      get_relay_boards_comm_proxy_command_des(item->cmd),
 			//      can_com_cmd_common->index);
 
-			relay_boards_comm_proxy_set_connect_state(relay_boards_comm_proxy_ctx, proxy_channel_item->relay_board_id, 1);
+			relay_boards_comm_proxy_set_connect_state(relay_boards_comm_proxy_ctx, relay_board_id, 1);
 
-			ret = item->response_callback(channels_info, item, proxy_channel_item->relay_board_id);
+			ret = item->response_callback(channels_info, item, relay_board_id);
 
 			if(ret != 0) {//收到响应
-				debug("process response channel %d(%d), cmd %d(%s), index:%d error!",
-				      proxy_channel_item->channel_id,
-				      proxy_channel_item->relay_board_id,
+				debug("process response relay board %d, cmd %d(%s), index:%d error!",
+				      relay_board_id,
 				      item->cmd,
 				      get_relay_boards_comm_proxy_command_des(item->cmd),
 				      can_com_cmd_common->index);
@@ -422,42 +664,36 @@ static void can_data_response(void *fn_ctx, void *chain_ctx)
 int start_relay_boards_comm_proxy_remote(channels_info_t *channels_info)
 {
 	int ret = 0;
-	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx;
 	channels_config_t *channels_config = channels_info->channels_config;
+	relay_boards_comm_proxy_ctx_t *relay_boards_comm_proxy_ctx;
 	int i;
-	power_manager_settings_t *power_manager_settings = &channels_info->channels_settings.power_manager_settings
-	        uint8_t relay_board_number = 0;
+
+	if(channels_info->relay_board_number == 0) {
+		return ret;
+	}
 
 	OS_ASSERT(channels_info->relay_boards_comm_proxy_ctx == NULL);
 
 	relay_boards_comm_proxy_ctx = (relay_boards_comm_proxy_ctx_t *)os_calloc(1, sizeof(relay_boards_comm_proxy_ctx_t));
 	OS_ASSERT(relay_boards_comm_proxy_ctx != NULL);
 
-	for(i = 0; i < power_manager_settings->power_manager_group_number; i++) {
-		power_manager_group_settings_t *power_manager_group_settings = &power_manager_settings->power_manager_group_settings[i];
-		relay_board_number += power_manager_group_settings->channel_number * power_manager_group_settings->relay_board_number_per_channel;
-	}
-
-	channels_info->relay_board_number = relay_board_number;
-
-	relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx = (relay_boards_comm_proxy_relay_board_ctx_t *)os_calloc(relay_board_number, sizeof(relay_boards_comm_proxy_relay_board_ctx_t));
+	relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx = (relay_boards_comm_proxy_relay_board_ctx_t *)os_calloc(channels_info->relay_board_number, sizeof(relay_boards_comm_proxy_relay_board_ctx_t));
 	OS_ASSERT(relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx != NULL);
 
-	for(i = 0; i < proxy_channel_number; i++) {
+	for(i = 0; i < channels_info->relay_board_number; i++) {
 		int j;
 		relay_boards_comm_proxy_relay_board_ctx_t *item = relay_boards_comm_proxy_ctx->relay_boards_comm_proxy_relay_board_ctx + i;
 		//relay_board_data_ctx_t *channel_data_ctx = &item->data_ctx;
-		proxy_channel_item_t *proxy_channel_item = get_proxy_channel_item_by_proxy_channel_index(&channels_config->proxy_channel_info, i);
 
-		item->cmd_ctx = (command_status_t *)os_calloc(CHANNELS_COMM_PROXY_COMMAND_SIZE, sizeof(command_status_t));
+		item->cmd_ctx = (command_status_t *)os_calloc(RELAY_BOARDS_COMM_PROXY_COMMAND_SIZE, sizeof(command_status_t));
 		OS_ASSERT(item->cmd_ctx != NULL);
 
-		for(j = 0; j < CHANNELS_COMM_PROXY_COMMAND_SIZE; j++) {
+		for(j = 0; j < RELAY_BOARDS_COMM_PROXY_COMMAND_SIZE; j++) {
 			item->cmd_ctx[j].available = 1;
 		}
 	}
 
-	relay_boards_comm_proxy_ctx->can_data_task_info = get_or_alloc_can_data_task_info(channels_config->proxy_channel_info.hcan);
+	relay_boards_comm_proxy_ctx->can_data_task_info = get_or_alloc_can_data_task_info(channels_config->power_manager_config.hcan_relay_board);
 	OS_ASSERT(relay_boards_comm_proxy_ctx->can_data_task_info != NULL);
 
 	relay_boards_comm_proxy_ctx->can_data_request_cb.fn = can_data_request;

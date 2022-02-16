@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2022年02月15日 星期二 11时09分57秒
+ *   修改日期：2022年02月16日 星期三 11时43分07秒
  *   描    述：
  *
  *================================================================*/
@@ -164,6 +164,7 @@ typedef enum {
 
 typedef struct {
 	power_manager_type_t power_manager_default_type;
+	void *hcan_relay_board;
 } power_manager_config_t;
 
 typedef struct {

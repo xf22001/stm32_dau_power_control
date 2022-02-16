@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月27日 星期一 09时22分16秒
- *   修改日期：2022年02月14日 星期一 16时14分35秒
+ *   修改日期：2022年02月16日 星期三 10时51分21秒
  *   描    述：
  *
  *================================================================*/
@@ -51,6 +51,10 @@ static void handle_channel_power_manager_stop(channel_info_t *channel_info)
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 	power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
 	power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + channel_info->channel_id;
+
+	if(power_manager_info == NULL) {
+		return;
+	}
 
 	if(power_manager_channel_info->status.state == POWER_MANAGER_CHANNEL_STATE_IDLE) {
 		channel_request_stop(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_POWER_MANAGER);
