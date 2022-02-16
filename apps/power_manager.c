@@ -6,7 +6,7 @@
  *   文件名称：power_manager.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分52秒
- *   修改日期：2022年02月16日 星期三 14时35分37秒
+ *   修改日期：2022年02月16日 星期三 15时38分32秒
  *   描    述：
  *
  *================================================================*/
@@ -606,7 +606,9 @@ void alloc_power_manager(channels_info_t *channels_info)
 		debug("skip power_manager %s", get_power_manager_type_des(power_manager_settings->type));
 	}
 
+#if defined(DAU_PROXY_REMOTE)
 	start_relay_boards_comm_proxy_remote(channels_info);
+#endif
 }
 
 __weak void power_manager_restore_config(channels_info_t *channels_info)
