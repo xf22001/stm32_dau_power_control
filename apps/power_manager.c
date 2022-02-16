@@ -6,12 +6,16 @@
  *   文件名称：power_manager.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分52秒
- *   修改日期：2022年02月16日 星期三 15时38分32秒
+ *   修改日期：2022年02月16日 星期三 15时54分30秒
  *   描    述：
  *
  *================================================================*/
 #include "power_manager.h"
+
 #include "power_manager_handler_native.h"
+#if defined(DAU_PROXY_REMOTE)
+#include "relay_boards_comm_proxy_remote.h"
+#endif
 
 #include "log.h"
 
