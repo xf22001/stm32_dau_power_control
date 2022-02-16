@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2022年02月16日 星期三 15时16分26秒
+ *   修改日期：2022年02月16日 星期三 15时30分41秒
  *   描    述：
  *
  *================================================================*/
@@ -52,10 +52,6 @@ typedef struct {
 //all channels event type
 typedef enum {
 	CHANNELS_EVENT_UNKNOW = 0,
-	CHANNELS_EVENT_INSULATION,
-	CHANNELS_EVENT_TELEMETER,
-	CHANNELS_EVENT_CARD_READER,
-	CHANNELS_EVENT_DISPLAY,
 	CHANNELS_EVENT_CHANNEL,
 } channels_event_type_t;
 
@@ -292,24 +288,6 @@ typedef enum {
 } channels_fault_t;
 
 typedef enum {
-	ELECTRIC_LEAKAGE_DETECT_TYPE_UNKNOW = 0,
-	ELECTRIC_LEAKAGE_DETECT_TYPE_A,
-	ELECTRIC_LEAKAGE_DETECT_TYPE_B,
-	ELECTRIC_LEAKAGE_DETECT_TYPE_C,
-} electric_leakage_detect_type_t;
-
-typedef enum {
-	ELECTRIC_LEAKAGE_DETECT_B_STATE_CAL_PREPARE = 0,//cal to high, test to low, trip to low
-	ELECTRIC_LEAKAGE_DETECT_B_STATE_CAL_START,//cal keep high >= 100ms, then cal to low
-	ELECTRIC_LEAKAGE_DETECT_B_STATE_TEST_PREPARE,//cal 100ms >= keep >= 50ms, then cal to high
-	ELECTRIC_LEAKAGE_DETECT_B_STATE_TEST_START,//test keep low >=500ms, then to high
-	ELECTRIC_LEAKAGE_DETECT_B_STATE_WAIT_TRIP,//test keep high 400ms, then to low, wait trip;
-	ELECTRIC_LEAKAGE_DETECT_B_STATE_PREPARE_DETECT,//wait trip to low = 100ms
-	ELECTRIC_LEAKAGE_DETECT_B_STATE_DETECT,//wait trip
-	ELECTRIC_LEAKAGE_DETECT_B_STATE_ERROR,
-} electric_leakage_detect_b_state_t;
-
-typedef enum {
 	CHANNELS_NOTIFY_NONE = 0,
 	CHANNELS_NOTIFY_CHANNEL_STATE_CHANGE,
 	CHANNELS_NOTIFY_CHANNEL_CHARGER_STATE_EVENT,
@@ -351,22 +329,14 @@ typedef struct {
 	uint8_t power_module_number;
 
 	channel_info_t *channel_info;
-	void *card_reader_info;
 	void *display_info;
-	void *voice_info;
 	channels_settings_t channels_settings;
 	uint8_t channels_settings_invalid;
 	uint8_t update_channels_settings;
 	display_cache_channels_t display_cache_channels;
 	bitmap_t *faults;//channels_fault_t
-	void *channel_comm_channel_info;
-	void *channel_comm_channels_info;
 	uint16_t temperature_ad;
 	int8_t temperature;
-
-	uint8_t electric_leakage_detect_type;//electric_leakage_detect_type_t;
-	uint8_t electric_leakage_detect_b_state;//electric_leakage_detect_b_state_t
-	uint32_t electric_leakage_detect_b_stamps;
 
 	void *channels_comm_proxy_ctx;
 	void *relay_boards_comm_proxy_ctx;

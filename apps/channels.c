@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2022年02月16日 星期三 15时11分31秒
+ *   修改日期：2022年02月16日 星期三 15时31分04秒
  *   描    述：
  *
  *================================================================*/
@@ -56,10 +56,6 @@ char *get_channels_event_type_des(channels_event_type_t type)
 
 	switch(type) {
 			add_des_case(CHANNELS_EVENT_UNKNOW);
-			add_des_case(CHANNELS_EVENT_INSULATION);
-			add_des_case(CHANNELS_EVENT_TELEMETER);
-			add_des_case(CHANNELS_EVENT_CARD_READER);
-			add_des_case(CHANNELS_EVENT_DISPLAY);
 			add_des_case(CHANNELS_EVENT_CHANNEL);
 
 		default: {
