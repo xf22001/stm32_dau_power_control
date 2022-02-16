@@ -6,7 +6,7 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2022年02月16日 星期三 14时36分53秒
+#   修改日期：2022年02月16日 星期三 15时04分16秒
 #   描    述：
 #
 #================================================================
@@ -44,8 +44,6 @@ USER_C_SOURCES += apps/display_cache.c
 USER_C_SOURCES += apps/power_manager_group_policy_handler.c
 USER_C_SOURCES += apps/channels.c
 USER_C_SOURCES += apps/channel.c
-USER_C_SOURCES += apps/charger.c
-USER_C_SOURCES += apps/charger_bms.c
 USER_C_SOURCES += apps/power_manager.c
 USER_C_SOURCES += apps/power_manager_handler_native.c
 USER_C_SOURCES += apps/channel_record.c

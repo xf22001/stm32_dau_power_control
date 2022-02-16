@@ -6,7 +6,7 @@
  *   文件名称：channels_config.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分44秒
- *   修改日期：2022年02月16日 星期三 14时37分59秒
+ *   修改日期：2022年02月16日 星期三 15时13分02秒
  *   描    述：
  *
  *================================================================*/
@@ -28,63 +28,6 @@ char *get_channel_config_channel_type_des(channel_type_t type)
 			add_des_case(CHANNEL_TYPE_NATIVE);
 			add_des_case(CHANNEL_TYPE_PROXY_REMOTE);
 			add_des_case(CHANNEL_TYPE_PROXY_LOCAL);
-
-		default: {
-		}
-		break;
-	}
-
-	return des;
-}
-
-char *get_channel_config_charger_bms_type_des(channel_charger_bms_type_t type)
-{
-	char *des = "unknow";
-
-	switch(type) {
-			add_des_case(CHANNEL_CHARGER_BMS_TYPE_NONE);
-			add_des_case(CHANNEL_CHARGER_BMS_TYPE_GB);
-			add_des_case(CHANNEL_CHARGER_BMS_TYPE_AC);
-			add_des_case(CHANNEL_CHARGER_BMS_TYPE_NOBMS);
-			add_des_case(CHANNEL_CHARGER_BMS_TYPE_CUSTOM);
-
-		default: {
-		}
-		break;
-	}
-
-	return des;
-}
-
-char *get_channel_config_energy_meter_type_des(energy_meter_type_t type)
-{
-	char *des = "unknow";
-
-	switch(type) {
-			add_des_case(ENERGY_METER_TYPE_NONE);
-			add_des_case(ENERGY_METER_TYPE_AC);
-			add_des_case(ENERGY_METER_TYPE_AC_HLW8032);
-			add_des_case(ENERGY_METER_TYPE_DC);
-			add_des_case(ENERGY_METER_TYPE_AC_SDM_220);
-			add_des_case(ENERGY_METER_TYPE_AC_SDM_630);
-			add_des_case(ENERGY_METER_TYPE_PROXY);
-
-		default: {
-		}
-		break;
-	}
-
-	return des;
-}
-
-char *get_channel_config_function_board_type_des(function_board_type_t type)
-{
-	char *des = "unknow";
-
-	switch(type) {
-			add_des_case(FUNCTION_BOARD_TYPE_NONE);
-			add_des_case(FUNCTION_BOARD_TYPE_485);
-			add_des_case(FUNCTION_BOARD_TYPE_MODBUS);
 
 		default: {
 		}

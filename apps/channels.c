@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2022年02月15日 星期二 16时05分58秒
+ *   修改日期：2022年02月16日 星期三 15时11分31秒
  *   描    述：
  *
  *================================================================*/
@@ -336,12 +336,7 @@ static void update_channels_config(channels_info_t *channels_info)
 	for(i = 0; i < channels_config->channel_number; i++) {
 		channel_config_t *channel_config_item = channel_config_sz + i;
 
-		channel_charger_config_t *channel_charger_config = &channel_config_item->charger_config;
-
 		channel_config_item->channel_type = CHANNEL_TYPE_PROXY_REMOTE;
-
-		channel_charger_config->charger_type = CHANNEL_CHARGER_BMS_TYPE_NOBMS;
-
 
 		channels_config->channel_config[i] = channel_config_item;
 	}

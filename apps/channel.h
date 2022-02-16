@@ -6,7 +6,7 @@
  *   文件名称：channel.h
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分16秒
- *   修改日期：2021年12月07日 星期二 12时53分53秒
+ *   修改日期：2022年02月16日 星期三 15时15分44秒
  *   描    述：
  *
  *================================================================*/
@@ -38,10 +38,6 @@ void channel_request_charging(channel_info_t *channel_info);
 void channel_request_end(channel_info_t *channel_info);
 void channel_request_idle(channel_info_t *channel_info);
 void channel_request_stop(channel_info_t *channel_info, channel_record_item_stop_reason_t stop_reason);
-time_t get_ts_by_seg_index(uint8_t seg_index);
-uint8_t get_seg_index_by_ts(time_t ts);
-uint8_t parse_price_info(price_info_t *price_info, price_item_cb_t price_item_cb, void *ctx);
-uint32_t get_current_price(channels_info_t *channels_info, time_t ts);
 int set_channel_type(channel_info_t *channel_info, channel_type_t channel_type);
 void load_channel_display_cache(channel_info_t *channel_info);
 void sync_channel_display_cache(channel_info_t *channel_info);

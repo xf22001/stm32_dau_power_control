@@ -6,14 +6,12 @@
  *   文件名称：channel_handler_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月27日 星期一 09时22分16秒
- *   修改日期：2022年02月16日 星期三 10时51分21秒
+ *   修改日期：2022年02月16日 星期三 15时06分04秒
  *   描    述：
  *
  *================================================================*/
 #include "channel_handler_proxy_remote.h"
 
-#include "charger.h"
-#include "charger_bms.h"
 #include "power_manager.h"
 
 #include "log.h"

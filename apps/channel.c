@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2022年02月16日 星期三 15时02分09秒
+ *   修改日期：2022年02月16日 星期三 15时14分58秒
  *   描    述：
  *
  *================================================================*/
@@ -21,7 +21,6 @@
 #if defined(CHARGER_CHANNEL_PROXY_LOCAL)
 #include "channel_handler_proxy_local.h"
 #endif
-#include "charger.h"
 #include "config_layout.h"
 #include "display.h"
 
@@ -198,72 +197,6 @@ void channel_request_stop(channel_info_t *channel_info, channel_record_item_stop
 	}
 }
 
-time_t get_ts_by_seg_index(uint8_t seg_index)
-{
-	time_t ts = 0;
-
-	if(seg_index > PRICE_SEGMENT_SIZE) {
-		seg_index %= PRICE_SEGMENT_SIZE;
-	}
-
-	ts = seg_index * 86400 / PRICE_SEGMENT_SIZE;
-
-	return ts;
-}
-
-uint8_t get_seg_index_by_ts(time_t ts)
-{
-	uint8_t seg_index;
-
-	if(ts > 86400) {
-		ts %= 86400;
-	}
-
-	seg_index = ts / (86400 / PRICE_SEGMENT_SIZE);
-
-	return seg_index;
-}
-
-uint8_t parse_price_info(price_info_t *price_info, price_item_cb_t price_item_cb, void *ctx)
-{
-	int i;
-	uint8_t j = 0;
-	uint32_t price = price_info->price[0];
-	uint8_t start_seg = 0;
-
-	for(i = 0; i < PRICE_SEGMENT_SIZE; i++) {
-		if(price_info->price[i] == price) {
-			continue;
-		}
-
-		if(price_item_cb != NULL) {
-			if(price_item_cb(j, start_seg, i, price, ctx) == 0) {
-				j++;
-			}
-		}
-
-		if(i < PRICE_SEGMENT_SIZE) {
-			price = price_info->price[i];
-			start_seg = i;
-		}
-	}
-
-	if(price_item_cb(j, start_seg, i, price, ctx) == 0) {
-		j++;
-	}
-
-	return j;
-}
-
-uint32_t get_current_price(channels_info_t *channels_info, time_t ts)
-{
-	price_info_t *price_info_energy = &channels_info->channels_settings.price_info_energy;
-	price_info_t *price_info_service = &channels_info->channels_settings.price_info_service;
-	uint8_t index = get_seg_index_by_ts(ts);
-
-	return price_info_energy->price[index] + price_info_service->price[index];
-}
-
 int set_channel_type(channel_info_t *channel_info, channel_type_t channel_type)
 {
 	int ret = -1;
@@ -320,10 +253,6 @@ static int channel_init(channel_info_t *channel_info)
 	OS_ASSERT(channel_info->request_stop_chain != NULL);
 	channel_info->power_manager_channel_request_state_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->power_manager_channel_request_state_chain != NULL);
-	channel_info->bms_auto_start_chain = alloc_callback_chain();
-	OS_ASSERT(channel_info->bms_auto_start_chain != NULL);
-
-	alloc_charger_info(channel_info);
 
 	set_channel_type(channel_info, channel_settings->channel_type);
 
@@ -356,7 +285,6 @@ static void channel_info_reset_default_config(channel_info_t *channel_info)
 	memset(channel_settings, 0, sizeof(channel_settings_t));
 
 	channel_settings->channel_type = channel_config->channel_type;
-	channel_settings->charger_settings.charger_type = channel_config->charger_config.charger_type;
 
 	channel_settings->max_output_power = 2000000;
 

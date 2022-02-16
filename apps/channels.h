@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2022年02月16日 星期三 15时01分35秒
+ *   修改日期：2022年02月16日 星期三 15时16分26秒
  *   描    述：
  *
  *================================================================*/
@@ -99,14 +99,7 @@ typedef enum {
 #pragma pack(push, 1)
 
 typedef struct {
-	uint8_t charger_type;//channel_charger_bms_type_t
-} charger_settings_t;
-
-typedef struct {
 	uint8_t channel_type;//channel_type_t
-	charger_settings_t charger_settings;
-
-	uint8_t ac_current_limit;//ac_current_limit_t
 
 	uint32_t max_output_power;//0.0001kw
 	uint32_t max_output_voltage;//0.1v
@@ -173,13 +166,11 @@ typedef struct {
 	callback_chain_t *state_changed_chain;
 	callback_chain_t *request_stop_chain;
 	callback_chain_t *power_manager_channel_request_state_chain;
-	callback_chain_t *bms_auto_start_chain;
 
 	callback_item_t channel_start_callback_item;
 	callback_item_t channel_end_callback_item;
 	callback_item_t channel_state_changed_callback_item;
 	callback_item_t power_manager_channel_request_state_callback_item;
-	callback_item_t bms_auto_start_callback_item;
 
 	//channel record cb
 	void *channel_record_task_info;
@@ -189,7 +180,6 @@ typedef struct {
 	callback_item_t display_data_invalid_callback_item;
 	callback_item_t display_data_changed_callback_item;
 
-	void *charger_info;
 	uint16_t temperature_p_ad;
 	int16_t temperature_p;
 	uint16_t temperature_n_ad;
@@ -277,11 +267,8 @@ typedef struct {
 } card_reader_settings_t;
 
 typedef struct {
-	uint8_t authorize;
-	uint8_t precharge_enable;
 	power_module_settings_t power_module_settings;
 	power_manager_settings_t power_manager_settings;
-	card_reader_settings_t card_reader_settings;
 
 	uint16_t module_max_output_voltage;//最大输出电压 0.1v
 	uint16_t module_min_output_voltage;//最小输出电压 0.1v
@@ -292,16 +279,6 @@ typedef struct {
 	uint16_t module_max_output_power;//单模块最大功率 w
 	uint32_t channels_max_output_power;//柜体最大功率 w
 	uint8_t power_manager_group_policy;
-
-	uint8_t noload_protect_disable;
-	uint8_t soc_threshold;
-	uint16_t power_threshold;//单位 0.1kW
-	uint8_t magnification;//电表放大倍率.0:2位小数, 1:3位小数
-	price_info_t price_info_energy;
-	price_info_t price_info_service;
-	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
-
-	uint8_t pe_detect_disable;
 } channels_settings_t;
 
 #pragma pack(pop)
