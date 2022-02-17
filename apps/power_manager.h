@@ -6,7 +6,7 @@
  *   文件名称：power_manager.h
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分56秒
- *   修改日期：2022年02月16日 星期三 14时11分55秒
+ *   修改日期：2022年02月17日 星期四 13时52分42秒
  *   描    述：
  *
  *================================================================*/
@@ -95,6 +95,7 @@ typedef struct {
 	struct list_head power_module_item_list;//电源模块列表
 	uint8_t id;
 	void *power_manager_group_info;
+	void *power_manager_relay_board_info;
 	void *power_manager_channel_info;
 } power_module_group_info_t;
 
@@ -214,6 +215,11 @@ typedef struct {
 	power_manager_handler_deinit_t deinit;
 } power_manager_handler_t;
 
+typedef enum {
+	POWER_MANAGER_GROUP_POLICY_AVERAGE = 0,
+	POWER_MANAGER_GROUP_POLICY_PRIORITY,
+} power_manager_group_policy_t;
+
 typedef int (*power_manager_group_policy_handler_init_t)(void *_power_manager_info);
 typedef int (*power_manager_group_policy_handler_deinit_t)(void *_power_manager_info);
 typedef int (*power_manager_group_policy_handler_channel_start_t)(void *_power_manager_channel_info);
@@ -224,7 +230,7 @@ typedef int (*power_manager_group_policy_handler_config_t)(void *_power_manager_
 typedef int (*power_manager_group_policy_handler_sync_t)(void *_power_manager_group_info);
 
 typedef struct {
-	uint8_t policy;
+	uint8_t policy;//power_manager_group_policy_t
 	power_manager_group_policy_handler_init_t init;
 	power_manager_group_policy_handler_deinit_t deinit;
 	power_manager_group_policy_handler_channel_start_t channel_start;
@@ -253,9 +259,10 @@ typedef struct {
 	void *power_manager_group_policy_ctx;
 } power_manager_info_t;
 
+char *get_power_module_item_state_des(power_module_item_state_t state);
 char *get_power_manager_channel_state_des(power_manager_channel_state_t state);
 char *get_power_manager_group_change_state_des(power_manager_change_state_t state);
-char *get_power_module_item_state_des(power_module_item_state_t state);
+char *get_power_manager_group_policy_des(power_manager_group_policy_t policy);
 void start_dump_channels_stats(void);
 void alloc_power_manager(channels_info_t *channels_info);
 void power_manager_restore_config(channels_info_t *channels_info);

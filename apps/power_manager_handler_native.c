@@ -6,7 +6,7 @@
  *   文件名称：power_manager_handler_native.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 15时40分30秒
- *   修改日期：2022年02月15日 星期二 19时44分49秒
+ *   修改日期：2022年02月17日 星期四 16时27分25秒
  *   描    述：
  *
  *================================================================*/
@@ -606,12 +606,14 @@ static void update_power_manager_group_policy(power_manager_info_t *power_manage
 
 	if((power_manager_info->power_manager_group_policy_handler == NULL) ||
 	   (power_manager_info->power_manager_group_policy_handler->policy != channels_settings->power_manager_group_policy)) {
-		debug("set power manager group policy handler %d", channels_settings->power_manager_group_policy);
 
 		if((power_manager_info->power_manager_group_policy_handler != NULL) &&
 		   (power_manager_info->power_manager_group_policy_handler->deinit != NULL)) {
 			OS_ASSERT(power_manager_info->power_manager_group_policy_handler->deinit(power_manager_info) == 0);
+			debug("reset power manager group policy handler %s", get_power_manager_group_policy_des(power_manager_info->power_manager_group_policy_handler->policy));
 		}
+
+		debug("set power manager group policy handler %s", get_power_manager_group_policy_des(channels_settings->power_manager_group_policy));
 
 		power_manager_info->power_manager_group_policy_handler = get_power_manager_group_policy_handler(channels_settings->power_manager_group_policy);
 
@@ -619,7 +621,7 @@ static void update_power_manager_group_policy(power_manager_info_t *power_manage
 		   (power_manager_info->power_manager_group_policy_handler->init != NULL)) {
 			OS_ASSERT(power_manager_info->power_manager_group_policy_handler->init(power_manager_info) == 0);
 		} else {
-			debug("skip init power manager group policy handler %d", channels_settings->power_manager_group_policy);
+			debug("skip init power manager group policy handler %s", get_power_manager_group_policy_des(channels_settings->power_manager_group_policy));
 		}
 	}
 }

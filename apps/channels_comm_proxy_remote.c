@@ -6,7 +6,7 @@
  *   文件名称：channels_comm_proxy_remote.c
  *   创 建 者：肖飞
  *   创建日期：2021年09月16日 星期四 10时34分46秒
- *   修改日期：2022年02月16日 星期三 11时09分20秒
+ *   修改日期：2022年02月17日 星期四 17时22分18秒
  *   描    述：
  *
  *================================================================*/
@@ -165,6 +165,7 @@ static int response_channel_require(channels_info_t *channels_info, void *_comma
 	//      channel_info->require_voltage,
 	//      channel_info->require_current);
 
+	channel_info->remote_require_state = channel_require->require_state;
 	if(data_ctx->require_state != channel_require->require_state) {
 		debug("channel_id:%d require_state %s -> %s",
 		      channel_info->channel_id,

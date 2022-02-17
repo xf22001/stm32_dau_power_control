@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2022年02月16日 星期三 15时30分41秒
+ *   修改日期：2022年02月17日 星期四 17时21分27秒
  *   描    述：
  *
  *================================================================*/
@@ -202,6 +202,8 @@ typedef struct {
 	uint32_t require_voltage;//0.1v
 	uint32_t require_current;//0.1v
 	uint8_t power_manager_channel_state;//power_manager_channel_state_t
+
+	uint8_t remote_require_state;
 
 	uint8_t pre_channels_fault;
 	uint8_t pre_channel_fault;

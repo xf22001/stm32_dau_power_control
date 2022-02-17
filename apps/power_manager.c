@@ -6,7 +6,7 @@
  *   文件名称：power_manager.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 14时08分52秒
- *   修改日期：2022年02月16日 星期三 15时54分30秒
+ *   修改日期：2022年02月17日 星期四 15时30分41秒
  *   描    述：
  *
  *================================================================*/
@@ -37,6 +37,27 @@ static power_manager_handler_t *get_power_manager_handler(power_manager_type_t t
 	}
 
 	return power_manager_handler;
+}
+
+char *get_power_module_item_state_des(power_module_item_state_t state)
+{
+	char *des = "unknow";
+
+	switch(state) {
+			add_des_case(POWER_MODULE_ITEM_STATE_IDLE);
+			add_des_case(POWER_MODULE_ITEM_STATE_PREPARE_ACTIVE);
+			add_des_case(POWER_MODULE_ITEM_STATE_READY);
+			add_des_case(POWER_MODULE_ITEM_STATE_ACTIVE);
+			add_des_case(POWER_MODULE_ITEM_STATE_PREPARE_DEACTIVE);
+			add_des_case(POWER_MODULE_ITEM_STATE_DEACTIVE);
+			add_des_case(POWER_MODULE_ITEM_STATE_DISABLE);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
 }
 
 char *get_power_manager_channel_state_des(power_manager_channel_state_t state)
@@ -82,18 +103,13 @@ char *get_power_manager_group_change_state_des(power_manager_change_state_t stat
 	return des;
 }
 
-char *get_power_module_item_state_des(power_module_item_state_t state)
+char *get_power_manager_group_policy_des(power_manager_group_policy_t policy)
 {
 	char *des = "unknow";
 
-	switch(state) {
-			add_des_case(POWER_MODULE_ITEM_STATE_IDLE);
-			add_des_case(POWER_MODULE_ITEM_STATE_PREPARE_ACTIVE);
-			add_des_case(POWER_MODULE_ITEM_STATE_READY);
-			add_des_case(POWER_MODULE_ITEM_STATE_ACTIVE);
-			add_des_case(POWER_MODULE_ITEM_STATE_PREPARE_DEACTIVE);
-			add_des_case(POWER_MODULE_ITEM_STATE_DEACTIVE);
-			add_des_case(POWER_MODULE_ITEM_STATE_DISABLE);
+	switch(policy) {
+			add_des_case(POWER_MANAGER_GROUP_POLICY_AVERAGE);
+			add_des_case(POWER_MANAGER_GROUP_POLICY_PRIORITY);
 
 		default: {
 		}
@@ -140,6 +156,27 @@ static void print_power_module_item_info(const uint8_t pad, power_module_item_in
 	//_printf("%s\tprotect_overcurrent:%d\n", _pad, u_power_module_status.s.protect_overcurrent);
 	//_printf("%s\tprotect_overtemperature:%d\n", _pad, u_power_module_status.s.protect_overtemperature);
 	//_printf("%s\tsetting_poweroff:%d\n", _pad, u_power_module_status.s.setting_poweroff);
+
+	os_free(_pad);
+}
+
+static void print_relay_board_info(const uint8_t pad, power_manager_relay_board_info_t *power_manager_relay_board_info)
+{
+	//u_power_module_status_t u_power_module_status;
+	char *_pad = (char *)os_calloc(1, pad + 1);
+	power_manager_channel_info_t *power_manager_channel_info = (power_manager_channel_info_t *)power_manager_relay_board_info->power_manager_channel_info;
+
+	OS_ASSERT(_pad != NULL);
+	memset(_pad, '\t', pad);
+
+	_printf("%srelay board:%d\n", _pad, power_manager_relay_board_info->id);
+	_printf("%s\tchannel id:%d\n", _pad, power_manager_channel_info->id);
+	_printf("%s\toffset:%d\n", _pad, power_manager_relay_board_info->offset);
+	_printf("%s\tnumber:%d\n", _pad, power_manager_relay_board_info->number);
+	_printf("%s\tconfig:0b%08x\n", _pad, u8_bin(power_manager_relay_board_info->config));
+	_printf("%s\tremote_config:0b%08x\n", _pad, u8_bin(power_manager_relay_board_info->remote_config));
+	_printf("%s\ttemperature1:%d\n", _pad, power_manager_relay_board_info->temperature1);
+	_printf("%s\ttemperature2:%d\n", _pad, power_manager_relay_board_info->temperature2);
 
 	os_free(_pad);
 }
@@ -198,17 +235,34 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 
 	_printf("\n");
 
+
+	_printf("all relay boards:\n");
+
+	for(i = 0; i < channels_info->relay_board_number; i++) {
+		power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + i;
+
+		print_relay_board_info(1, power_manager_relay_board_info);
+	}
+
+	_printf("\n");
+
 	_printf("all channels:\n");
 
 	for(i = 0; i < channels_info->channel_number; i++) {
 		power_manager_channel_info_t *power_manager_channel_info = power_manager_info->power_manager_channel_info + i;
 		power_module_group_info_t *power_module_group_info;
+		power_manager_relay_board_info_t *power_manager_relay_board_info;
 
 		print_power_manager_channel_info(1, power_manager_channel_info);
 
 		head = &power_manager_channel_info->power_module_group_list;
 		list_for_each_entry(power_module_group_info, head, power_module_group_info_t, list) {
 			print_power_module_group_info(2, power_module_group_info);
+		}
+
+		head = &power_manager_channel_info->relay_board_list;
+		list_for_each_entry(power_manager_relay_board_info, head, power_manager_relay_board_info_t, list) {
+			print_relay_board_info(2, power_manager_relay_board_info);
 		}
 	}
 
@@ -218,6 +272,7 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 		power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + i;
 		power_module_group_info_t *power_module_group_info;
 		power_manager_channel_info_t *power_manager_channel_info;
+		power_manager_relay_board_info_t *power_manager_relay_board_info;
 
 		_printf("power manager group:%d\n", power_manager_group_info->id);
 
@@ -260,8 +315,13 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 
 			head1 = &power_manager_channel_info->power_module_group_list;
 			list_for_each_entry(power_module_group_info, head1, power_module_group_info_t, list) {
-				print_power_module_group_info(2, power_module_group_info);
+				print_power_module_group_info(3, power_module_group_info);
 			}
+			head1 = &power_manager_channel_info->relay_board_list;
+			list_for_each_entry(power_manager_relay_board_info, head1, power_manager_relay_board_info_t, list) {
+				print_relay_board_info(3, power_manager_relay_board_info);
+			}
+
 		}
 		_printf("\n");
 
@@ -273,6 +333,10 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 			head1 = &power_manager_channel_info->power_module_group_list;
 			list_for_each_entry(power_module_group_info, head1, power_module_group_info_t, list) {
 				print_power_module_group_info(3, power_module_group_info);
+			}
+			head1 = &power_manager_channel_info->relay_board_list;
+			list_for_each_entry(power_manager_relay_board_info, head1, power_manager_relay_board_info_t, list) {
+				print_relay_board_info(3, power_manager_relay_board_info);
 			}
 		}
 		_printf("\n");
@@ -286,6 +350,10 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 			list_for_each_entry(power_module_group_info, head1, power_module_group_info_t, list) {
 				print_power_module_group_info(3, power_module_group_info);
 			}
+			head1 = &power_manager_channel_info->relay_board_list;
+			list_for_each_entry(power_manager_relay_board_info, head1, power_manager_relay_board_info_t, list) {
+				print_relay_board_info(3, power_manager_relay_board_info);
+			}
 		}
 		_printf("\n");
 
@@ -297,6 +365,10 @@ static void power_manager_debug(power_manager_info_t *power_manager_info)
 			head1 = &power_manager_channel_info->power_module_group_list;
 			list_for_each_entry(power_module_group_info, head1, power_module_group_info_t, list) {
 				print_power_module_group_info(3, power_module_group_info);
+			}
+			head1 = &power_manager_channel_info->relay_board_list;
+			list_for_each_entry(power_manager_relay_board_info, head1, power_manager_relay_board_info_t, list) {
+				print_relay_board_info(3, power_manager_relay_board_info);
 			}
 		}
 		_printf("\n");
