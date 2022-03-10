@@ -6,7 +6,7 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2022年02月16日 星期三 15时04分16秒
+#   修改日期：2022年03月10日 星期四 16时58分32秒
 #   描    述：
 #
 #================================================================
@@ -21,6 +21,7 @@ USER_C_INCLUDES += -Iapps/modules/os
 USER_C_INCLUDES += -Iapps/modules/drivers
 USER_C_INCLUDES += -Iapps/modules/hardware
 USER_C_INCLUDES += -Iapps/modules/app
+USER_C_INCLUDES += -Iapps/modules/app/dau
 USER_C_INCLUDES += -Iapps/modules/app/power_modules
 USER_C_INCLUDES += -Iapps/modules/app/ftpd
 USER_C_INCLUDES += -Iapps/modules/app/vfs_disk
@@ -31,7 +32,6 @@ C_INCLUDES += $(USER_C_INCLUDES)
 
 USER_C_SOURCES += apps/os_memory.c
 USER_C_SOURCES += apps/os_random.c
-USER_C_SOURCES += apps/early_sys_callback.c
 USER_C_SOURCES += apps/app.c
 USER_C_SOURCES += apps/uart_debug_handler.c
 USER_C_SOURCES += apps/probe_tool_handler.c
@@ -42,20 +42,22 @@ USER_C_SOURCES += apps/gpio_map.c
 USER_C_SOURCES += apps/channels_addr_handler.c
 USER_C_SOURCES += apps/display_cache.c
 USER_C_SOURCES += apps/power_manager_group_policy_handler.c
-USER_C_SOURCES += apps/channels.c
-USER_C_SOURCES += apps/channel.c
-USER_C_SOURCES += apps/power_manager.c
-USER_C_SOURCES += apps/power_manager_handler_native.c
-USER_C_SOURCES += apps/channel_record.c
+
+USER_C_SOURCES += apps/modules/app/dau/early_sys_callback.c
+USER_C_SOURCES += apps/modules/app/dau/channels.c
+USER_C_SOURCES += apps/modules/app/dau/channel.c
+USER_C_SOURCES += apps/modules/app/dau/power_manager.c
+USER_C_SOURCES += apps/modules/app/dau/power_manager_handler_native.c
+USER_C_SOURCES += apps/modules/app/dau/channel_record.c
 ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE),)
-USER_C_SOURCES += apps/channel_handler_proxy_remote.c
-USER_C_SOURCES += apps/channels_comm_proxy.c
-USER_C_SOURCES += apps/channels_comm_proxy_remote.c
+USER_C_SOURCES += apps/modules/app/dau/channel_handler_proxy_remote.c
+USER_C_SOURCES += apps/modules/app/dau/channels_comm_proxy.c
+USER_C_SOURCES += apps/modules/app/dau/channels_comm_proxy_remote.c
 endif
 
 ifneq ($(call ifdef_any_of,DAU_PROXY_REMOTE),)
-USER_C_SOURCES += apps/relay_boards_comm_proxy.c
-USER_C_SOURCES += apps/relay_boards_comm_proxy_remote.c
+USER_C_SOURCES += apps/modules/app/dau/relay_boards_comm_proxy.c
+USER_C_SOURCES += apps/modules/app/dau/relay_boards_comm_proxy_remote.c
 endif
 
 USER_C_SOURCES += apps/modules/app/config_utils.c
