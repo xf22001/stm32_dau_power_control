@@ -340,6 +340,10 @@ typedef struct {
 	uint16_t temperature_ad;
 	int8_t temperature;
 
+	uint16_t va;
+	uint16_t vb;
+	uint16_t vc;
+
 	void *channels_comm_proxy_ctx;
 	void *relay_boards_comm_proxy_ctx;
 	void *power_manager_info;

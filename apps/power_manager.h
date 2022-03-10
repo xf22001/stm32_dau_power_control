@@ -80,6 +80,8 @@ typedef struct {
 
 	uint32_t query_stamp;//1000
 	uint32_t setting_stamp;//2000
+	uint32_t input_lowvoltage_stamps;
+	uint32_t input_overvoltage_stamps;
 
 	power_module_item_status_t status;
 	bitmap_t *faults;//power_module_item_fault_t

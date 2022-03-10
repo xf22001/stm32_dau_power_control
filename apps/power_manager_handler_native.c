@@ -6,7 +6,7 @@
  *   文件名称：power_manager_handler_native.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月23日 星期二 15时40分30秒
- *   修改日期：2022年02月17日 星期四 16时27分25秒
+ *   修改日期：2022年03月09日 星期三 16时46分31秒
  *   描    述：
  *
  *================================================================*/
@@ -34,7 +34,7 @@ static void handle_power_manager_channel_state(power_manager_channel_info_t *pow
 	uint32_t ticks = osKernelSysTick();
 	power_manager_channel_info->status.require_output_voltage = 0;
 	power_manager_channel_info->status.require_output_current = 0;
-	power_manager_channel_info->status.max_output_power = 0;
+	power_manager_channel_info->status.max_output_power = channel_info->channel_settings.max_output_power;
 
 	switch(power_manager_channel_info->status.state) {
 		case POWER_MANAGER_CHANNEL_STATE_IDLE: {
@@ -60,9 +60,15 @@ static void handle_power_manager_channel_state(power_manager_channel_info_t *pow
 		break;
 
 		case POWER_MANAGER_CHANNEL_STATE_PREPARE_START: {
-			power_manager_channel_info->status.require_output_voltage = channel_info->require_voltage;
-			power_manager_channel_info->status.require_output_current = channel_info->require_current;
-			power_manager_channel_info->status.max_output_power = channel_info->channel_settings.max_output_power;
+			if(power_manager_channel_info->status.require_output_voltage != channel_info->require_voltage) {
+				power_manager_channel_info->status.require_output_voltage = channel_info->require_voltage;
+				debug("power manager channel %d require output voltage:%d", power_manager_channel_info->id, power_manager_channel_info->status.require_output_voltage);
+			}
+
+			if(power_manager_channel_info->status.require_output_current != channel_info->require_current) {
+				power_manager_channel_info->status.require_output_current = channel_info->require_current;
+				debug("power manager channel %d require output voltage:%d", power_manager_channel_info->id, power_manager_channel_info->status.require_output_current);
+			}
 
 			if(power_manager_channel_info->request_state == POWER_MANAGER_CHANNEL_REQUEST_STATE_STOP) {//关机
 				power_manager_channel_info->request_state = POWER_MANAGER_CHANNEL_REQUEST_STATE_NONE;
@@ -112,7 +118,6 @@ static void handle_power_manager_channel_state(power_manager_channel_info_t *pow
 		case POWER_MANAGER_CHANNEL_STATE_START: {
 			power_manager_channel_info->status.require_output_voltage = channel_info->require_voltage;
 			power_manager_channel_info->status.require_output_current = channel_info->require_current;
-			power_manager_channel_info->status.max_output_power = channel_info->channel_settings.max_output_power;
 
 			power_manager_channel_info->status.state = POWER_MANAGER_CHANNEL_STATE_RUNNING;
 			debug("power manager channel %d to state %s", power_manager_channel_info->id, get_power_manager_channel_state_des(power_manager_channel_info->status.state));
@@ -122,7 +127,6 @@ static void handle_power_manager_channel_state(power_manager_channel_info_t *pow
 		case POWER_MANAGER_CHANNEL_STATE_RUNNING: {
 			power_manager_channel_info->status.require_output_voltage = channel_info->require_voltage;
 			power_manager_channel_info->status.require_output_current = channel_info->require_current;
-			power_manager_channel_info->status.max_output_power = channel_info->channel_settings.max_output_power;
 
 			if(power_manager_channel_info->request_state == POWER_MANAGER_CHANNEL_REQUEST_STATE_STOP) {//关机
 				power_manager_channel_info->request_state = POWER_MANAGER_CHANNEL_REQUEST_STATE_NONE;
@@ -690,13 +694,33 @@ static void update_poewr_module_item_info_status(power_module_item_info_t *power
 	}
 
 	if((power_module_info->input_aline_voltage < 1900) || (power_module_info->input_bline_voltage < 1900) || (power_module_info->input_cline_voltage < 1900)) {
+		debug("power module %d input_aline_voltage:%d, input_bline_voltage:%d, input_cline_voltage:%d",
+		      power_module_item_info->id,
+		      power_module_info->input_aline_voltage,
+		      power_module_info->input_bline_voltage,
+		      power_module_info->input_cline_voltage);
 		low_voltage = 1;
 	} else if((power_module_info->input_aline_voltage > 2500) || (power_module_info->input_bline_voltage > 2500) || (power_module_info->input_cline_voltage > 2500)) {
+		debug("power module %d input_aline_voltage:%d, input_bline_voltage:%d, input_cline_voltage:%d",
+		      power_module_item_info->id,
+		      power_module_info->input_aline_voltage,
+		      power_module_info->input_bline_voltage,
+		      power_module_info->input_cline_voltage);
 		over_voltage = 1;
+	}
 
-		if((power_module_info->input_aline_voltage > 2750) || (power_module_info->input_bline_voltage > 2750) || (power_module_info->input_cline_voltage > 2750)) {
-			power_module_info->over_voltage_disable = 1;
-		}
+	if(low_voltage == 0) {
+		power_module_item_info->input_lowvoltage_stamps = ticks;
+	}
+
+	if(over_voltage == 0) {
+		power_module_item_info->input_overvoltage_stamps = ticks;
+	}
+
+	if(ticks_duration(ticks, power_module_item_info->input_lowvoltage_stamps) >= 5000) {
+		low_voltage = 1;
+	} else {
+		low_voltage = 0;
 	}
 
 	if(get_fault(power_module_item_info->faults, POWER_MODULE_ITEM_FAULT_INPUT_LOW_VOLTAGE) != low_voltage) {
@@ -707,6 +731,12 @@ static void update_poewr_module_item_info_status(power_module_item_info_t *power
 		}
 
 		fault_changed = 1;
+	}
+
+	if(ticks_duration(ticks, power_module_item_info->input_overvoltage_stamps) >= 5000) {
+		over_voltage = 1;
+	} else {
+		over_voltage = 0;
 	}
 
 	if(get_fault(power_module_item_info->faults, POWER_MODULE_ITEM_FAULT_INPUT_OVER_VOLTAGE) != over_voltage) {
@@ -1022,6 +1052,31 @@ static void handle_power_module_item_info_state(power_module_item_info_t *power_
 	}
 }
 
+static void update_channels_module_input_voltage(power_manager_info_t *power_manager_info)
+{
+	channels_info_t *channels_info = power_manager_info->channels_info;
+	uint16_t va = 0;
+	uint16_t vb = 0;
+	uint16_t vc = 0;
+	int i;
+
+	for(i = 0; i < power_manager_info->power_modules_info->power_module_number; i++) {
+		power_module_item_info_t *power_module_item_info = power_manager_info->power_module_item_info + i;
+		power_module_info_t *power_module_info = power_manager_info->power_modules_info->power_module_info + power_module_item_info->id;
+
+		if(get_first_fault(power_module_item_info->faults) == -1) {
+			va = power_module_info->input_aline_voltage;
+			vb = power_module_info->input_bline_voltage;
+			vc = power_module_info->input_cline_voltage;
+			break;
+		}
+	}
+
+	channels_info->va = va;
+	channels_info->vb = vb;
+	channels_info->vc = vc;
+}
+
 static void handle_power_module_item_info(power_manager_info_t *power_manager_info)
 {
 	int i;
@@ -1032,16 +1087,18 @@ static void handle_power_module_item_info(power_manager_info_t *power_manager_in
 		update_poewr_module_item_info_status(power_module_item_info);
 		handle_power_module_item_info_state(power_module_item_info);
 	}
+
+	update_channels_module_input_voltage(power_manager_info);
 }
 
 static uint8_t is_power_module_item_info_idle(power_module_item_info_t *power_module_item_info)
 {
-	uint8_t idle = -1;
+	uint8_t idle = 0;
 
 	switch(power_module_item_info->status.state) {
 		case POWER_MODULE_ITEM_STATE_IDLE:
 		case POWER_MODULE_ITEM_STATE_DISABLE: {
-			idle = 0;
+			idle = 1;
 		}
 		break;
 
@@ -1063,7 +1120,7 @@ static void handle_fan_state(power_manager_info_t *power_manager_info)
 	for(i = 0; i < power_manager_info->power_modules_info->power_module_number; i++) {
 		power_module_item_info_t *power_module_item_info = power_manager_info->power_module_item_info + i;
 
-		if(is_power_module_item_info_idle(power_module_item_info) != 0) {
+		if(is_power_module_item_info_idle(power_module_item_info) == 0) {
 			state = GPIO_PIN_SET;
 			break;
 		}
