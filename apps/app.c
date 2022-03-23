@@ -69,22 +69,19 @@ int app_save_config(void)
 	return save_config_item(app_info->storage_info, "eva", &app_info->mechine_info, sizeof(mechine_info_t), offset);
 }
 
-int app_event_init(size_t size)
+static void app_event_init(size_t size)
 {
-	int ret = -1;
-
 	if(app_event != NULL) {
-		return ret;
+		return;
 	}
 
 	app_event = signal_create(size);
 	OS_ASSERT(app_event != NULL);
-	ret = 0;
-	return ret;
 }
 
 void app_init(void)
 {
+	app_event_init(10);
 	mem_info_init();
 	mt_file_init();
 }
@@ -207,8 +204,6 @@ void app(void const *argument)
 	channels_info_t *channels_info = NULL;
 	display_info_t *display_info = NULL;
 	int ret;
-
-	app_init();
 
 	app_info = (app_info_t *)os_calloc(1, sizeof(app_info_t));
 

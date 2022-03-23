@@ -28,7 +28,6 @@ USER_C_INCLUDES += -Iapps/modules/app/vfs_disk
 USER_C_INCLUDES += -Iapps/modules/app/net_client
 USER_C_INCLUDES += -Iapps/modules/tests
 
-C_INCLUDES += $(USER_C_INCLUDES)
 
 USER_C_SOURCES += apps/os_memory.c
 USER_C_SOURCES += apps/os_random.c
@@ -38,27 +37,11 @@ USER_C_SOURCES += apps/probe_tool_handler.c
 USER_C_SOURCES += apps/channels_config.c
 USER_C_SOURCES += apps/can_config.c
 USER_C_SOURCES += apps/storage_config.c
-USER_C_SOURCES += apps/gpio_map.c
 USER_C_SOURCES += apps/channels_addr_handler.c
 USER_C_SOURCES += apps/display_cache.c
 USER_C_SOURCES += apps/power_manager_group_policy_handler.c
+USER_C_SOURCES += apps/gpio_map.c
 
-USER_C_SOURCES += apps/modules/app/dau/early_sys_callback.c
-USER_C_SOURCES += apps/modules/app/dau/channels.c
-USER_C_SOURCES += apps/modules/app/dau/channel.c
-USER_C_SOURCES += apps/modules/app/dau/power_manager.c
-USER_C_SOURCES += apps/modules/app/dau/power_manager_handler_native.c
-USER_C_SOURCES += apps/modules/app/dau/channel_record.c
-ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE),)
-USER_C_SOURCES += apps/modules/app/dau/channel_handler_proxy_remote.c
-USER_C_SOURCES += apps/modules/app/dau/channels_comm_proxy.c
-USER_C_SOURCES += apps/modules/app/dau/channels_comm_proxy_remote.c
-endif
-
-ifneq ($(call ifdef_any_of,DAU_PROXY_REMOTE),)
-USER_C_SOURCES += apps/modules/app/dau/relay_boards_comm_proxy.c
-USER_C_SOURCES += apps/modules/app/dau/relay_boards_comm_proxy_remote.c
-endif
 
 USER_C_SOURCES += apps/modules/app/config_utils.c
 USER_C_SOURCES += apps/modules/app/poll_loop.c
@@ -97,10 +80,23 @@ USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_stategrid
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_yyln.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_winline.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_zte.c
+USER_C_SOURCES += apps/modules/app/dau/channels.c
+USER_C_SOURCES += apps/modules/app/dau/channel.c
+USER_C_SOURCES += apps/modules/app/dau/power_manager.c
+USER_C_SOURCES += apps/modules/app/dau/power_manager_handler_native.c
+USER_C_SOURCES += apps/modules/app/dau/channel_record.c
+ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE),)
+USER_C_SOURCES += apps/modules/app/dau/channel_handler_proxy_remote.c
+USER_C_SOURCES += apps/modules/app/dau/channels_comm_proxy_remote.c
+USER_C_SOURCES += apps/modules/app/dau/relay_boards_comm_proxy_remote.c
+endif
+ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE CHARGER_CHANNEL_PROXY_LOCAL),)
+USER_C_SOURCES += apps/modules/app/dau/channels_comm_proxy.c
+USER_C_SOURCES += apps/modules/app/dau/relay_boards_comm_proxy.c
+endif
+
 USER_C_SOURCES += apps/modules/hardware/flash.c
-USER_C_SOURCES += apps/modules/hardware/dlt_645_master_txrx.c
 USER_C_SOURCES += apps/modules/hardware/modbus_slave_txrx.c
-USER_C_SOURCES += apps/modules/hardware/modbus_master_txrx.c
 USER_C_SOURCES += apps/modules/hardware/modbus_spec.c
 USER_C_SOURCES += apps/modules/hardware/storage.c
 ifneq ($(call ifdef_any_of,STORAGE_OPS_25LC1024),)
@@ -125,11 +121,11 @@ USER_C_SOURCES += apps/modules/os/net_utils.c
 USER_C_SOURCES += apps/modules/os/cpu_utils.c
 USER_C_SOURCES += apps/modules/os/log.c
 USER_C_SOURCES += apps/modules/os/object_class.c
+USER_C_SOURCES += apps/modules/os/retarget.c
+USER_C_SOURCES += apps/modules/os/syscalls.c
 USER_C_SOURCES += apps/modules/tests/test_serial.c
 USER_C_SOURCES += apps/modules/tests/test_event.c
 USER_C_SOURCES += apps/modules/tests/test_storage.c
-
-C_SOURCES += $(USER_C_SOURCES)
 
 USER_CFLAGS += -DtraceTASK_SWITCHED_IN=StartIdleMonitor -DtraceTASK_SWITCHED_OUT=EndIdleMonitor
 USER_CFLAGS += -DLOG_CONFIG_FILE=\"log_config.h\"
