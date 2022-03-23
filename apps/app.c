@@ -198,6 +198,21 @@ uint8_t app_get_reset_config(void)
 	return reset_config;
 }
 
+static void modify_valid_time(void)
+{
+	struct tm tm = {0};
+	time_t ts;
+
+	tm.tm_year = 2021 - 1900;
+	tm.tm_mon = 1 - 1;
+	tm.tm_mday = 1;
+	tm.tm_hour = 0;
+	tm.tm_min = 0;
+	tm.tm_sec = 0;
+	ts = mktime(&tm);
+	set_time(ts);
+}
+
 void app(void const *argument)
 {
 	poll_loop_t *poll_loop;
@@ -264,6 +279,8 @@ void app(void const *argument)
 	add_log_handler((log_fn_t)log_file_data);
 
 	debug("===========================================start app============================================");
+
+	modify_valid_time();
 
 	//ftpd_init();
 
