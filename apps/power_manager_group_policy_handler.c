@@ -6,7 +6,7 @@
  *   文件名称：power_manager_group_policy_handler.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月30日 星期二 15时07分16秒
- *   修改日期：2022年02月17日 星期四 17时25分04秒
+ *   修改日期：2022年06月06日 星期一 22时59分48秒
  *   描    述：
  *
  *================================================================*/
@@ -36,8 +36,7 @@ static int channel_start_average(void *_power_manager_channel_info)
 	int ret = 0;
 	power_manager_channel_info_t *power_manager_channel_info = (power_manager_channel_info_t *)_power_manager_channel_info;
 
-	power_manager_channel_info->status.reassign = 0;
-	power_manager_channel_info->status.reassign_module_group_number = 0;
+	power_manager_channel_info->status.reassign_power_module_group_number = 0;
 	return ret;
 }
 
@@ -343,7 +342,7 @@ static void channel_info_assign_power_module_group(power_manager_channel_info_t 
 	}
 }
 
-static void active_pdu_group_info_power_module_group_assign(power_manager_group_info_t *power_manager_group_info, uint8_t average_count, uint8_t available_count)
+static void active_power_manager_group_info_power_module_group_assign(power_manager_group_info_t *power_manager_group_info, uint8_t average_count, uint8_t available_count)
 {
 	power_manager_channel_info_t *power_manager_channel_info;
 	struct list_head *head;
@@ -423,7 +422,7 @@ static int assign_average(void *_power_manager_group_info)
 	available_power_module_group_count = get_available_power_group_count(power_manager_group_info);
 	debug("available_power_module_group_count:%d", available_power_module_group_count);
 
-	active_pdu_group_info_power_module_group_assign(power_manager_group_info, average_power_module_group_per_channel, available_power_module_group_count);
+	active_power_manager_group_info_power_module_group_assign(power_manager_group_info, average_power_module_group_per_channel, available_power_module_group_count);
 
 	return ret;
 }
@@ -466,7 +465,7 @@ static int _config(void *_power_manager_group_info)
 
 		if(power_manager_channel_info->power_manager_group_info != power_manager_group_info) {
 			power_manager_group_info_t *power_manager_group_info_channel = (power_manager_group_info_t *)power_manager_channel_info->power_manager_group_info;
-			debug("skip channel_id %d in pdu_group_id %d", power_manager_channel_info->id, power_manager_group_info_channel->id);
+			debug("skip channel_id %d in power_manager_group_id %d", power_manager_channel_info->id, power_manager_group_info_channel->id);
 			continue;
 		}
 
@@ -524,7 +523,7 @@ static int _sync(void *_power_manager_group_info)
 
 		if(power_manager_channel_info->power_manager_group_info != power_manager_group_info) {
 			power_manager_channel_info_t *power_manager_channel_info_channel = (power_manager_channel_info_t *)power_manager_channel_info->power_manager_group_info;
-			debug("skip channel_id %d in pdu_group_id %d", power_manager_channel_info->id, power_manager_channel_info_channel->id);
+			debug("skip channel_id %d in power_manager_group_id %d", power_manager_channel_info->id, power_manager_channel_info_channel->id);
 			continue;
 		}
 
@@ -580,140 +579,117 @@ static int channel_start_priority(void *_power_manager_channel_info)
 	int ret = 0;
 	power_manager_channel_info_t *power_manager_channel_info = (power_manager_channel_info_t *)_power_manager_channel_info;
 
-	power_manager_channel_info->status.reassign = 1;//使能二次重分配
-	power_manager_channel_info->status.reassign_module_group_number = 1;
+	power_manager_channel_info->status.reassign_power_module_group_number = 1;
 	return ret;
-}
-
-static uint16_t get_single_module_max_output_current(channels_settings_t *channels_settings)
-{
-	if(channels_settings->module_max_output_current == 0) {
-		return 60 * 10;
-	}
-
-	return channels_settings->module_max_output_current;
-}
-
-static void power_module_voltage_current_correction(channels_settings_t *channels_settings, uint16_t *voltage, uint16_t *current)
-{
-	if(*voltage == 0) {
-		*current = 0;
-		return;
-	}
-
-	if(*current == 0) {
-		*voltage = 0;
-		return;
-	}
-
-	//debug("voltage:%d, current:%d", *voltage, *current);
-	//debug("module_max_output_voltage:%d, module_min_output_voltage:%d, module_max_output_current:%d, module_min_output_current:%d",
-	//      channels_settings->module_max_output_voltage,
-	//      channels_settings->module_min_output_voltage,
-	//      channels_settings->module_max_output_current,
-	//      channels_settings->module_min_output_current);
-
-	if(*voltage > channels_settings->module_max_output_voltage) {
-		*voltage = channels_settings->module_max_output_voltage;
-	}
-
-	if(*voltage < channels_settings->module_min_output_voltage) {
-		*voltage = channels_settings->module_min_output_voltage;
-	}
-
-	if(*current > channels_settings->module_max_output_current) {
-		*current = channels_settings->module_max_output_current;
-	}
-
-	if(*current < channels_settings->module_min_output_current) {
-		*current = channels_settings->module_min_output_current;
-	}
-}
-
-static void power_module_power_limit_correction(channels_settings_t *channels_settings, uint16_t *voltage, uint16_t *current)
-{
-	uint32_t power = *voltage * *current;
-
-	if(channels_settings->module_max_output_power != 0) {
-		uint32_t max_power = channels_settings->module_max_output_power * 100;
-
-		if(power > max_power) {
-			uint16_t limit_current = max_power / *voltage;
-
-			if(limit_current < *current) {
-				*current = limit_current;
-			}
-		}
-	}
 }
 
 static int channel_charging_priority(void *_power_manager_channel_info)
 {
 	int ret = 0;
-	power_manager_channel_info_t *power_manager_channel_info = (power_manager_channel_info_t *)_power_manager_channel_info;
-	power_manager_group_info_t *power_manager_group_info = (power_manager_group_info_t *)power_manager_channel_info->power_manager_group_info;
-	power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_group_info->power_manager_info;
-	channels_info_t *channels_info = power_manager_info->channels_info;
-	channels_settings_t *channels_settings = &channels_info->channels_settings;
-	channel_info_t *channel_info = channels_info->channel_info + power_manager_channel_info->id;
+	return ret;
+}
 
-	if(channel_info->remote_require_state == CHANNEL_WORK_STATE_CHARGE) {
-		uint16_t single_module_max_output_current = get_single_module_max_output_current(channels_settings);
-		uint16_t require_output_current = power_manager_channel_info->status.require_output_current;
-		uint16_t require_output_voltage = power_manager_channel_info->status.require_output_voltage;
+static void channel_info_deactive_unneeded_power_module_group_priority(power_manager_channel_info_t *power_manager_channel_info)
+{
+	struct list_head *pos;
+	struct list_head *n;
+	struct list_head *head;
+	power_manager_group_info_t *power_manager_group_info = power_manager_channel_info->power_manager_group_info;
+	uint8_t channel_power_module_group_size;
+	uint8_t channel_power_module_group_to_remove_count = 0;
 
-		power_module_voltage_current_correction(channels_settings, &require_output_voltage, &single_module_max_output_current);
+	head = &power_manager_channel_info->power_module_group_list;
+	channel_power_module_group_size = list_size(head);
 
-		//debug("channel_id %d require_output_voltage:%d", power_manager_channel_info->id, require_output_voltage);
-		//debug("channel_id %d single_module_max_output_current:%d", power_manager_channel_info->id, single_module_max_output_current);
+	debug("channel_id %d reassign_power_module_group_number:%d", power_manager_channel_info->id, power_manager_channel_info->status.reassign_power_module_group_number);
 
-		if(power_manager_channel_info->status.charge_output_voltage != 0) {
-			require_output_voltage = power_manager_channel_info->status.charge_output_voltage;
-			//debug("channel_id %d require_output_voltage:%d", power_manager_channel_info->id, require_output_voltage);
-		}
-
-		power_module_power_limit_correction(channels_settings, &require_output_voltage, &single_module_max_output_current);
-
-		//debug("channel_id %d single_module_max_output_current:%d", power_manager_channel_info->id, single_module_max_output_current);
-
-		if(single_module_max_output_current != 0) {
-			uint8_t power_module_number = 0;
-			uint16_t module_group_output_current = 0;
-
-			if(list_size(&power_manager_channel_info->power_module_group_list) == 0) {
-				power_module_number = 1;
-			} else {
-				power_module_group_info_t *power_module_group_info = list_first_entry(&power_manager_channel_info->power_module_group_list, power_module_group_info_t, list);
-
-				power_module_number = list_size(&power_module_group_info->power_module_item_list);
-
-			}
-
-			module_group_output_current = single_module_max_output_current * power_module_number;
-
-			if(power_manager_channel_info->status.reassign == 1) {
-				power_manager_channel_info->status.reassign = 0;
-				power_manager_channel_info->status.reassign_module_group_number = (require_output_current + (module_group_output_current - 1)) / module_group_output_current;
-				debug("channel_id %d require_output_current:%d", power_manager_channel_info->id, require_output_current);
-				debug("channel_id %d module_group_output_current:%d", power_manager_channel_info->id, module_group_output_current);
-
-
-				debug("channel_id %d reassign_module_group_number:%d", power_manager_channel_info->id, power_manager_channel_info->status.reassign_module_group_number);
-				power_manager_group_info->change_state = POWER_MANAGER_CHANGE_STATE_MODULE_PREPARE_FREE;//模块组重分配
-			} else {
-				if(power_manager_group_info->change_state == POWER_MANAGER_CHANGE_STATE_IDLE) {
-					if(power_manager_channel_info->status.reassign_module_group_number != ((require_output_current + (module_group_output_current - 1)) / module_group_output_current)) {
-						debug("request channel_id %d reassign!!!!!!!!!", power_manager_channel_info->id);
-						power_manager_channel_info->status.reassign = 1;
-					}
-				}
-			}
-
-		} else {
-			debug("channel_id %d require_output_current:%d, require_output_voltage:%d", power_manager_channel_info->id, require_output_current, require_output_voltage);
-		}
+	if(channel_power_module_group_size <= power_manager_channel_info->status.reassign_power_module_group_number) {
+		return;
 	}
 
+	channel_power_module_group_to_remove_count = channel_power_module_group_size - power_manager_channel_info->status.reassign_power_module_group_number;
+
+	list_for_each_safe(pos, n, head) {
+		power_module_group_info_t *power_module_group_info = list_entry(pos, power_module_group_info_t, list);
+		power_module_item_info_t *power_module_item_info;
+		struct list_head *head1 = &power_module_group_info->power_module_item_list;
+		list_for_each_entry(power_module_item_info, head1, power_module_item_info_t, list) {
+			power_module_item_info->status.state = POWER_MODULE_ITEM_STATE_PREPARE_DEACTIVE;
+		}
+		list_move_tail(&power_module_group_info->list, &power_manager_group_info->power_module_group_deactive_list);
+		channel_power_module_group_to_remove_count--;
+
+		if(channel_power_module_group_to_remove_count == 0) {
+			break;
+		}
+	}
+}
+
+
+static void free_power_module_group_for_active_channel_priority(power_manager_group_info_t *power_manager_group_info)
+{
+	power_manager_channel_info_t *power_manager_channel_info;
+	struct list_head *head;
+
+	head = &power_manager_group_info->channel_active_list;
+
+	list_for_each_entry(power_manager_channel_info, head, power_manager_channel_info_t, list) {
+		channel_info_deactive_unneeded_power_module_group_priority(power_manager_channel_info);
+	}
+}
+
+static uint8_t get_more_power_group_count_need(power_manager_group_info_t *power_manager_group_info)
+{
+	uint8_t count = 0;
+	power_manager_channel_info_t *power_manager_channel_info;
+	struct list_head *head;
+
+	head = &power_manager_group_info->channel_active_list;
+
+	list_for_each_entry(power_manager_channel_info, head, power_manager_channel_info_t, list) {
+		if(list_size(&power_manager_channel_info->power_module_group_list) == 0) {
+			count++;
+		}
+	}
+	return count;
+}
+
+static int free_priority(void *_power_manager_group_info)
+{
+	int ret = -1;
+	power_manager_group_info_t *power_manager_group_info = (power_manager_group_info_t *)_power_manager_group_info;
+
+	//可用的模块组数
+	uint8_t available_power_module_group_count;
+	//需要从现在充电的枪中剔除多少个模块组
+	uint8_t more_power_module_group_count_need;
+
+	//释放所有即将停止充电的枪关联的模块组
+	free_power_module_group_for_stop_channel(power_manager_group_info);
+
+	//释放所有通道多余模块组数
+	free_power_module_group_for_active_channel_priority(power_manager_group_info);
+
+	//计算剩余模块组数
+	available_power_module_group_count = get_available_power_group_count(power_manager_group_info);
+	debug("available_power_module_group_count:%d", available_power_module_group_count);
+
+	//新启动枪至少一个模块组的前提下,至少需要几个模块组
+	more_power_module_group_count_need = get_more_power_group_count_need(power_manager_group_info);
+
+	if(more_power_module_group_count_need > available_power_module_group_count) {
+		more_power_module_group_count_need -= available_power_module_group_count;
+	} else {//不需要再释放模块组，到这里模块组释放完毕
+		ret = 0;
+		return ret;
+	}
+
+	debug("more_power_module_group_count_need:%d", more_power_module_group_count_need);
+
+	//从正在充电的枪中释放模块组
+	active_channel_list_remove_power_module_group(power_manager_group_info, more_power_module_group_count_need, 1);
+
+	ret = 0;
 	return ret;
 }
 
@@ -723,7 +699,7 @@ static power_manager_group_policy_handler_t power_manager_group_policy_handler_p
 	.deinit = deinit_priority,
 	.channel_start = channel_start_priority,
 	.channel_charging = channel_charging_priority,
-	.free = free_average,
+	.free = free_priority,
 	.assign = assign_average,
 	.config = _config,
 	.sync = _sync,
