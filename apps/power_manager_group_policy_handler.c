@@ -6,7 +6,7 @@
  *   文件名称：power_manager_group_policy_handler.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月30日 星期二 15时07分16秒
- *   修改日期：2022年06月07日 星期二 09时51分50秒
+ *   修改日期：2022年06月07日 星期二 16时49分07秒
  *   描    述：
  *
  *================================================================*/
@@ -63,6 +63,7 @@ static void channel_info_deactive_power_module_group(power_manager_channel_info_
 			power_module_item_info->status.state = POWER_MODULE_ITEM_STATE_PREPARE_DEACTIVE;
 		}
 		list_move_tail(&power_module_group_info->list, &power_manager_group_info->power_module_group_deactive_list);
+		power_module_group_info->power_manager_relay_board_info = NULL;
 	}
 }
 
@@ -150,6 +151,7 @@ static void channel_free_power_module_group(power_manager_channel_info_t *power_
 			power_module_item_info->status.state = POWER_MODULE_ITEM_STATE_PREPARE_DEACTIVE;
 		}
 		list_move_tail(&power_module_group_info->list, &power_manager_group_info->power_module_group_deactive_list);
+		power_module_group_info->power_manager_relay_board_info = NULL;
 		channel_free_power_module_group_count--;
 
 		if(channel_free_power_module_group_count == 0) {
@@ -316,18 +318,21 @@ static void channel_info_assign_power_module_group(power_manager_channel_info_t 
 
 		head1 = &power_manager_channel_info->relay_board_list;
 		list_for_each_entry(power_manager_relay_board_info, head1, power_manager_relay_board_info_t, list) {
-			uint8_t power_module_group = power_module_group_info->id;
-
-			if(power_module_group < power_manager_relay_board_info->offset) {
+			if(power_module_group_info->id < power_manager_relay_board_info->offset) {
 				continue;
 			}
 
-			if(power_module_group >= power_manager_relay_board_info->offset + power_manager_relay_board_info->number) {
+			if(power_module_group_info->id >= power_manager_relay_board_info->offset + power_manager_relay_board_info->number) {
 				continue;
 			}
 
-			//xiaofei clear power_module_group_info->power_manager_relay_board_info
 			power_module_group_info->power_manager_relay_board_info = power_manager_relay_board_info;
+		}
+
+		if(power_module_group_info->power_manager_relay_board_info == NULL) {
+			debug("channe %d power module group %d relay board is NULL",
+			      power_manager_channel_info->id,
+			      power_module_group_info->id);
 		}
 
 		count--;
@@ -454,7 +459,6 @@ static int _config(void *_power_manager_group_info)
 	power_manager_group_info_t *power_manager_group_info = (power_manager_group_info_t *)_power_manager_group_info;
 	power_manager_info_t *power_manager_info = (power_manager_info_t *)power_manager_group_info->power_manager_info;
 	struct list_head *head;
-	struct list_head *head1;
 	int i;
 	channels_info_t *channels_info = (channels_info_t *)power_manager_info->channels_info;
 
@@ -480,21 +484,19 @@ static int _config(void *_power_manager_group_info)
 
 		head = &power_manager_channel_info->power_module_group_list;
 		list_for_each_entry(power_module_group_info, head, power_module_group_info_t, list) {
-			head1 = &power_manager_channel_info->relay_board_list;
-			list_for_each_entry(power_manager_relay_board_info, head1, power_manager_relay_board_info_t, list) {
-				if(power_module_group_info->id < power_manager_relay_board_info->offset) {
-					continue;
-				}
+			power_manager_relay_board_info = power_module_group_info->power_manager_relay_board_info;
 
-				if(power_module_group_info->id >= power_manager_relay_board_info->offset + power_manager_relay_board_info->number) {
-					continue;
-				}
-
-				power_manager_relay_board_info->config = set_u8_bits(power_manager_relay_board_info->config,
-				        power_module_group_info->id - power_manager_relay_board_info->offset,
-				        1);
-				print_relay_board_info(2, power_manager_relay_board_info);
+			if(power_manager_relay_board_info == NULL) {
+				debug("channe %d power module group %d relay board is NULL",
+				      power_manager_channel_info->id,
+				      power_module_group_info->id);
+				continue;
 			}
+
+			power_manager_relay_board_info->config = set_u8_bits(power_manager_relay_board_info->config,
+			        power_module_group_info->id - power_manager_relay_board_info->offset,
+			        1);
+			print_relay_board_info(2, power_manager_relay_board_info);
 		}
 
 		head = &power_manager_channel_info->relay_board_list;
@@ -617,6 +619,7 @@ static void channel_info_deactive_unneeded_power_module_group_priority(power_man
 			power_module_item_info->status.state = POWER_MODULE_ITEM_STATE_PREPARE_DEACTIVE;
 		}
 		list_move_tail(&power_module_group_info->list, &power_manager_group_info->power_module_group_deactive_list);
+		power_module_group_info->power_manager_relay_board_info = NULL;
 		channel_power_module_group_to_remove_count--;
 
 		if(channel_power_module_group_to_remove_count == 0) {
