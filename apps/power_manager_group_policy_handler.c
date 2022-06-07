@@ -6,7 +6,7 @@
  *   文件名称：power_manager_group_policy_handler.c
  *   创 建 者：肖飞
  *   创建日期：2021年11月30日 星期二 15时07分16秒
- *   修改日期：2022年06月06日 星期一 22时59分48秒
+ *   修改日期：2022年06月07日 星期二 09时51分50秒
  *   描    述：
  *
  *================================================================*/
@@ -693,6 +693,130 @@ static int free_priority(void *_power_manager_group_info)
 	return ret;
 }
 
+static void active_power_manager_group_info_power_module_group_assign_priority(power_manager_group_info_t *power_manager_group_info, uint8_t available_count)
+{
+	power_manager_channel_info_t *power_manager_channel_info;
+	struct list_head *head;
+	uint8_t unsatisfied = 0;
+
+	head = &power_manager_group_info->channel_active_list;
+
+	debug("available_count:%d", available_count);
+	//先保证至少有一个模块组可用
+	list_for_each_entry(power_manager_channel_info, head, power_manager_channel_info_t, list) {
+		uint8_t power_module_group_count = list_size(&power_manager_channel_info->power_module_group_list);
+
+		if(power_module_group_count >= 1) {//至少有一个模块组可用,本轮不分配
+			continue;
+		}
+
+		if(available_count == 0) {
+			unsatisfied++;
+			continue;
+		}
+
+		channel_info_assign_power_module_group(power_manager_channel_info, 1);
+		available_count -= 1;
+	}
+
+	if(available_count == 0) {
+		int i;
+
+		for(i = 0; i < unsatisfied; i++) {
+			cancel_last_start_channel(power_manager_group_info);
+		}
+
+		return;
+	}
+
+	debug("available_count:%d", available_count);
+	//还有剩余模块组,按先后分配给有需求的通道
+	list_for_each_entry(power_manager_channel_info, head, power_manager_channel_info_t, list) {
+		uint8_t power_module_group_count = list_size(&power_manager_channel_info->power_module_group_list);
+
+		debug("channel_id %d reassign_power_module_group_number:%d", power_manager_channel_info->id, power_manager_channel_info->status.reassign_power_module_group_number);
+
+		if(power_module_group_count >= power_manager_channel_info->status.reassign_power_module_group_number) {//模块组足够
+			continue;
+		}
+
+		power_module_group_count = power_manager_channel_info->status.reassign_power_module_group_number - power_module_group_count;
+
+		if(power_module_group_count > available_count) {
+			power_module_group_count = available_count;
+		}
+
+		channel_info_assign_power_module_group(power_manager_channel_info, power_module_group_count);
+		available_count -= power_module_group_count;
+
+		if(available_count == 0) {
+			break;
+		}
+	}
+
+	if(available_count == 0) {
+		return;
+	}
+
+	debug("available_count:%d", available_count);
+
+	//还有剩余模块组,平均一下,按先后分配给各个通道
+	//if(available_count / list_size(&power_manager_group_info->channel_active_list) != 0) {
+	//	uint8_t power_module_group_count = available_count / list_size(&power_manager_group_info->channel_active_list);
+
+	//	list_for_each_entry(power_manager_channel_info, head, power_manager_channel_info_t, list) {
+	//		channel_info_assign_power_module_group(power_manager_channel_info, power_module_group_count);
+	//		available_count -= power_module_group_count;
+
+	//		if(available_count == 0) {
+	//			break;
+	//		}
+	//	}
+	//}
+
+	//if(available_count == 0) {
+	//	return;
+	//}
+
+	//debug("available_count:%d", available_count);
+	//不够平均,按先后分配各通道一个,分完为止
+	//list_for_each_entry(power_manager_channel_info, head, power_manager_channel_info_t, list) {
+	//	channel_info_assign_power_module_group(power_manager_channel_info, 1);
+	//	available_count -= 1;
+
+	//	if(available_count == 0) {
+	//		break;
+	//	}
+	//}
+}
+
+static int assign_priority(void *_power_manager_group_info)
+{
+	int ret = 0;
+	power_manager_group_info_t *power_manager_group_info = (power_manager_group_info_t *)_power_manager_group_info;
+
+	//充电中的枪数
+	uint8_t active_channel_count;
+	//可用的模块组数
+	uint8_t available_power_module_group_count;
+
+	//获取需要充电的枪数
+	active_channel_count = list_size(&power_manager_group_info->channel_active_list);
+	debug("active_channel_count:%d", active_channel_count);
+
+	if(active_channel_count == 0) {//如果没有枪需要充电,不分配
+		return ret;
+	}
+
+	//计算剩余模块组数
+	available_power_module_group_count = get_available_power_group_count(power_manager_group_info);
+	debug("available_power_module_group_count:%d", available_power_module_group_count);
+
+	active_power_manager_group_info_power_module_group_assign_priority(power_manager_group_info, available_power_module_group_count);
+
+	return ret;
+}
+
 static power_manager_group_policy_handler_t power_manager_group_policy_handler_priority = {
 	.policy = POWER_MANAGER_GROUP_POLICY_PRIORITY,
 	.init = init_priority,
@@ -700,7 +824,7 @@ static power_manager_group_policy_handler_t power_manager_group_policy_handler_p
 	.channel_start = channel_start_priority,
 	.channel_charging = channel_charging_priority,
 	.free = free_priority,
-	.assign = assign_average,
+	.assign = assign_priority,
 	.config = _config,
 	.sync = _sync,
 };
