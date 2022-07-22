@@ -6,7 +6,7 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2022年03月10日 星期四 16时58分32秒
+#   修改日期：2022年07月22日 星期五 16时18分25秒
 #   描    述：
 #
 #================================================================
@@ -37,9 +37,8 @@ USER_C_SOURCES += apps/probe_tool_handler.c
 USER_C_SOURCES += apps/channels_config.c
 USER_C_SOURCES += apps/can_config.c
 USER_C_SOURCES += apps/storage_config.c
-USER_C_SOURCES += apps/channels_addr_handler.c
+USER_C_SOURCES += apps/modbus_addr_handler.c
 USER_C_SOURCES += apps/display_cache.c
-USER_C_SOURCES += apps/power_manager_group_policy_handler.c
 USER_C_SOURCES += apps/gpio_map.c
 
 
@@ -84,6 +83,7 @@ USER_C_SOURCES += apps/modules/app/dau/channels.c
 USER_C_SOURCES += apps/modules/app/dau/channel.c
 USER_C_SOURCES += apps/modules/app/dau/power_manager.c
 USER_C_SOURCES += apps/modules/app/dau/power_manager_handler_native.c
+USER_C_SOURCES += apps/modules/app/dau/power_manager_group_policy_dau.c
 USER_C_SOURCES += apps/modules/app/dau/channel_record.c
 ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE),)
 USER_C_SOURCES += apps/modules/app/dau/channel_handler_proxy_remote.c

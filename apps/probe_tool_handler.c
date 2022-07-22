@@ -6,7 +6,7 @@
  *   文件名称：probe_tool_handler.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 12时48分07秒
- *   修改日期：2022年02月11日 星期五 21时51分27秒
+ *   修改日期：2022年07月22日 星期五 09时04分08秒
  *   描    述：
  *
  *================================================================*/
@@ -19,10 +19,7 @@
 
 #include "flash.h"
 #include "iap.h"
-#include "app.h"
-#include "ftp_client.h"
 #include "channels.h"
-#include "power_manager.h"
 
 #include "sal_hook.h"
 
@@ -34,10 +31,72 @@ static void fn1(request_t *request)
 	probe_server_chunk_sendto(request->payload.fn, (void *)0x8000000, 512);
 }
 
-#include "test_event.h"
 static void fn2(request_t *request)
 {
-	try_get_test_event();
+	int ret;
+	char *content = (char *)(request + 1);
+	channels_config_t *channels_config = get_channels_config(0);
+	channels_info_t *channels_info;
+	int fn;
+	int channel_id;
+	int type;
+	int catched;
+
+	if(channels_config == NULL) {
+		return;
+	}
+
+	channels_info = get_channels();
+
+	if(channels_info == NULL) {
+		return;
+	}
+
+	ret = sscanf(content, "%d %d %d%n", &fn, &channel_id, &type, &catched);
+
+	if(ret == 3) {
+		channel_info_t *channel_info = channels_info->channel_info + channel_id;
+		channel_event_t *channel_event = os_calloc(1, sizeof(channel_event_t));
+		channels_event_t *channels_event = os_calloc(1, sizeof(channels_event_t));
+
+		debug("fn:%d, channel_id:%d, type:%d!", fn, channel_id, type);
+
+		OS_ASSERT(channel_info != NULL);
+		OS_ASSERT(channel_event != NULL);
+		OS_ASSERT(channels_event != NULL);
+
+		switch(type) {
+			case CHANNEL_EVENT_TYPE_START_CHANNEL: {
+			}
+			break;
+
+			case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
+				channel_info->channel_event_stop.stop_reason = CHANNEL_RECORD_ITEM_STOP_REASON_MANUAL;
+			}
+			break;
+
+			default: {
+			}
+			break;
+		}
+
+		channel_event->channel_id = channel_id;
+		channel_event->type = type;
+		channel_event->ctx = &channel_info->channel_event_start_display;
+
+		channels_event->type = CHANNELS_EVENT_CHANNEL;
+		channels_event->event = channel_event;
+
+		if(send_channels_event(channels_info, channels_event, 100) != 0) {
+			os_free(channels_event->event);
+			os_free(channels_event);
+			debug("send channel %d type %d failed!", channel_id, type);
+		} else {
+			debug("send channel %d type %d successful!", channel_id, type);
+		}
+	} else {
+		_hexdump("fn2 content", content, request->header.data_size);
+	}
 }
 
 static void fn3(request_t *request)
@@ -57,6 +116,11 @@ static void fn3(request_t *request)
 			return;
 		}
 
+		if(set_firmware_valid(0) != 0) {
+			debug("");
+			return;
+		}
+
 		_printf("reset to bootloader!\n");
 
 		HAL_NVIC_SystemReset();
@@ -64,7 +128,7 @@ static void fn3(request_t *request)
 	}
 
 	if(stage == 0) {
-		flash_erase_sector(IAP_CONST_FW_ADDRESS_START_SECTOR, IAP_CONST_FW_ADDRESS_SECTOR_NUMBER);
+		OS_ASSERT(flash_erase_sector(IAP_CONST_FW_ADDRESS_START_SECTOR, IAP_CONST_FW_ADDRESS_SECTOR_NUMBER) == 0);
 	} else if(stage == 1) {
 		if(data_size == 4) {
 			uint32_t *p = (uint32_t *)data;
@@ -101,7 +165,13 @@ static void fn3(request_t *request)
 	loopback(request);
 
 	if(start_upgrade_app != 0) {
+		iap_app_config_t *iap_app_config = (iap_app_config_t *)IAP_CONST_APP_CONFIG_ADDRESS;
+		iap_fw_config_t *iap_fw_config = (iap_fw_config_t *)IAP_CONST_FW_CONFIG_ADDRESS;
+
 		_printf("start upgrade app!\n");
+
+		OS_ASSERT(iap_app_config->app_valid == 0xff);
+		OS_ASSERT(iap_fw_config->fw_valid == 0xff);
 
 		if(set_firmware_size(total_size) != 0) {
 			debug("");
@@ -111,13 +181,12 @@ static void fn3(request_t *request)
 			debug("");
 		}
 
-		if(set_firmware_valid(0) != 0) {
-			debug("");
-		}
-
 		if(set_app_valid(1) != 0) {
 			debug("");
 		}
+
+		OS_ASSERT(iap_app_config->app_valid == 1);
+		OS_ASSERT(iap_fw_config->fw_valid == 1);
 
 		HAL_NVIC_SystemReset();
 	}
@@ -170,7 +239,7 @@ static int p_host(struct hostent *ent)
 static void get_host_by_name(char *content, uint32_t size)
 {
 	struct hostent *ent;
-	char *hostname = (char *)os_alloc(RECV_BUFFER_SIZE);
+	char *hostname = (char *)os_calloc(1, RECV_BUFFER_SIZE);
 	int ret;
 	int fn;
 	int catched;
@@ -206,6 +275,7 @@ static void fn4(request_t *request)
 }
 
 uint16_t osGetCPUUsage(void);
+int get_brk_size(void);
 static void fn5(request_t *request)
 {
 	int size = xPortGetFreeHeapSize();
@@ -221,6 +291,7 @@ static void fn5(request_t *request)
 
 	_printf("cpu usage:%d\n", cpu_usage);
 	_printf("free os heap size:%d\n", size);
+	_printf("brk size:%d\n", get_brk_size());
 	_printf("total heap size:%d, free heap size:%d, used:%d, heap count:%d, max heap size:%d\n",
 	        total_heap_size,
 	        total_heap_size - heap_size,
@@ -241,7 +312,7 @@ static void fn5(request_t *request)
 
 	size = 1024;
 
-	os_thread_info = (uint8_t *)os_alloc(size);
+	os_thread_info = (uint8_t *)os_calloc(1, size);
 
 	if(os_thread_info == NULL) {
 		return;
@@ -249,7 +320,15 @@ static void fn5(request_t *request)
 
 	osThreadList(os_thread_info);
 
+	_printf("%-15s\t%s\t%s\t%s\t%s\n", "name", "state", "prio", "stack", "no");
 	_puts((const char *)os_thread_info);
+
+	vTaskGetRunTimeStats((char *)os_thread_info);
+
+	_printf("\n\n%-15s\t%s\t\t%s\n", "name", "count", "percent");
+	_puts((const char *)os_thread_info);
+
+	_printf("\n");
 
 	os_free(os_thread_info);
 
@@ -260,46 +339,50 @@ static void fn5(request_t *request)
 	}
 }
 
-#include "test_storage.h"
+static void fn6(request_t *request)
+{
+	start_dump_channels_stats();
+}
+
 static void fn7(request_t *request)
 {
-	char *content = (char *)(request + 1);
-	int fn;
-	int op;
-	int start;
-	int size;
-	int catched;
 	int ret;
+	char *content = (char *)(request + 1);
+	channels_config_t *channels_config = get_channels_config(0);
+	channels_info_t *channels_info;
+	channel_info_t *channel_info;
+	int fn;
+	int channel;
+	int voltage;
+	int current;
+	int state;
+	int catched;
+	uint32_t ticks = osKernelSysTick();
 
-	ret = sscanf(content, "%d %d %d %d%n", &fn, &op, &start, &size, &catched);
-
-	if(ret == 4) {
-		app_info_t *app_info = get_app_info();
-
-		OS_ASSERT(app_info->storage_info != NULL);
-
-		switch(op) {
-			case 0: {
-				test_storage_check(app_info->storage_info, start, size);
-			}
-			break;
-
-			case 1: {
-				test_storage_read(app_info->storage_info, start, size);
-			}
-			break;
-
-			case 2: {
-				test_storage_write(app_info->storage_info, start, size);
-			}
-			break;
-
-			default: {
-			}
-			break;
-		}
-
+	if(channels_config == NULL) {
+		return;
 	}
+
+	channels_info = get_channels();
+
+	if(channels_info == NULL) {
+		return;
+	}
+
+	ret = sscanf(content, "%d %d %d %d %d%n", &fn, &channel, &voltage, &current, &state, &catched);
+
+	if(ret == 5) {
+		debug("fn:%d, channel:%d, voltage:%d, current:%d, state:%d!", fn, channel, voltage, current, state);
+	} else {
+		_hexdump("fn7 content", content, request->header.data_size);
+	}
+
+	if(channel >= channels_info->channel_number) {
+		return;
+	}
+
+	channel_info = channels_info->channel_info + channel;
+	channel_require_update(channel_info, voltage, current, CHANNEL_REQUIRE_MODE_NORMAL);
 }
 
 static void fn8(request_t *request)
@@ -310,91 +393,59 @@ static void fn9(request_t *request)
 {
 }
 
-//#include "test_https.h"
-//void set_connect_enable(uint8_t enable);
+void set_connect_enable(uint8_t enable);
+uint8_t get_connect_enable(void);
 static void fn10(request_t *request)
 {
-	//char *url = "https://httpbin.org/get";
-	//char *url = "ws://192.168.41.2:8080/ocpp/";
-	//char *url = "ws://47.244.218.210:8080/OCPP/echoSocket/13623";
-	//char *url = "wss://35.201.125.176:433/SSECHINAEVSE";
-	//char *url = "https://216.58.199.110";
-	//char *url = "wss://ocpp-16-json.dev-plugitcloud.com/SSECHINAEVSE";
-	//char *url = "wss://iot-ebus-ocpp-v16-server-test.azurewebsites.net/ws/test123";
-	//test_https(url);
-	//set_connect_enable(1);
 }
 
-//12 10.42.0.1 2121 /user.mk anonymous
-//12 10.42.0.1 2121 /user.mk user pass
-//12 ftp.gnu.org 21 /gnu/tar/tar-1.32.tar.gz anonymous
-//12 ftp.sjtu.edu.cn 21 /centos/2/centos2-scripts-v1.tar anonymous
-static void fn12(request_t *request)
+#include "modbus_addr_handler.h"
+#include "modbus_slave_txrx.h"
+static void fn11(request_t *request)
 {
+	int ret;
 	char *content = (char *)(request + 1);
 	int fn;
+	int addr;
+	int value;
+	int op;
 	int catched;
-	int ret;
-	ftp_server_path_t *ftp_server_path = (ftp_server_path_t *)os_alloc(sizeof(ftp_server_path_t));
+	channels_config_t *channels_config = get_channels_config(0);
+	channels_info_t *channels_info;
+	modbus_data_ctx_t modbus_data_ctx;
 
-	if(ftp_server_path == NULL) {
+	if(channels_config == NULL) {
 		return;
 	}
 
-	memset(ftp_server_path, 0, sizeof(ftp_server_path_t));
+	channels_info = get_channels();
 
-	ret = sscanf(content, "%d %s %s %s %s %s %n", &fn, ftp_server_path->host, ftp_server_path->port, ftp_server_path->path, ftp_server_path->user, ftp_server_path->password, &catched);
-
-	debug("ret:%d", ret);
-
-	if((ret == 6) || (ret == 5)) {
-		debug("server host:\'%s\', server port:\'%s\', path\'%s\', user:\'%s\', password\'%s\'", ftp_server_path->host, ftp_server_path->port, ftp_server_path->path, ftp_server_path->user, ftp_server_path->password);
-		request_ftp_client_download(ftp_server_path->host, ftp_server_path->port, ftp_server_path->path, ftp_server_path->user, ftp_server_path->password, FTP_CLIENT_ACTION_DOWNLOAD, NULL, NULL);
+	if(channels_info == NULL) {
+		return;
 	}
 
-	os_free(ftp_server_path);
-}
+	ret = sscanf(content, "%d %d %d %d%n", &fn, &addr, &value, &op, &catched);
 
-static void fn13(request_t *request)
-{
-	char *content = (char *)(request + 1);
-	int fn;
-	int catched;
-	int ret;
-	struct tm tm;
-	time_t ts;
-
-	ret = sscanf(content, "%d %04d%02d%02d%02d%02d%02d %n",
-	             &fn,
-	             &tm.tm_year,
-	             &tm.tm_mon,
-	             &tm.tm_mday,
-	             &tm.tm_hour,
-	             &tm.tm_min,
-	             &tm.tm_sec,
-	             &catched);
-	debug("ret:%d", ret);
-	tm.tm_year -= 1900;
-	tm.tm_mon -= 1;
-	ts = mktime(&tm);
-
-	if(ret == 7) {
-		if(set_time(ts) == 0) {
-			debug("set time successful!");
-		} else {
-			debug("set time failed!");
-		}
+	if(ret == 4) {
+		debug("fn:%d, addr:%d, value:%d, op:%d!", fn, addr, value, op);
+	} else {
+		_hexdump("fn11 content", content, request->header.data_size);
+		return;
 	}
 
-	ts = get_time();
-	tm = *localtime(&ts);
-	debug("tm %04d-%02d-%02d %02d:%02d:%02d",
-	      tm.tm_year + 1900,
-	      tm.tm_mon + 1,
-	      tm.tm_mday,
-	      tm.tm_hour,
-	      tm.tm_min,
-	      tm.tm_sec);
+	modbus_data_ctx.ctx = NULL;
+	modbus_data_ctx.action = op;
+	modbus_data_ctx.addr = addr;
+	modbus_data_ctx.value = value;
+	channels_modbus_data_action(channels_info, &modbus_data_ctx);
+
+	debug("op:%s, addr:%s(%d), value:%d",
+	      (modbus_data_ctx.action == MODBUS_DATA_ACTION_GET) ? "get" :
+	      (modbus_data_ctx.action == MODBUS_DATA_ACTION_SET) ? "set" :
+	      "unknow",
+	      get_modbus_slave_addr_des(modbus_data_ctx.addr),
+	      modbus_data_ctx.addr,
+	      modbus_data_ctx.value);
 }
 
 static void fn14(request_t *request)
@@ -473,7 +524,29 @@ static void fn17(request_t *request)
 
 static void fn18(request_t *request)
 {
-	start_dump_channels_stats();
+	char *content = (char *)(request + 1);
+	int fn;
+	int catched;
+	int ret;
+
+	ret = sscanf(content, "%d %n", &fn, &catched);
+
+	if(ret == 1) {
+		iap_app_config_t *iap_app_config = (iap_app_config_t *)IAP_CONST_APP_CONFIG_ADDRESS;
+		iap_fw_config_t *iap_fw_config = (iap_fw_config_t *)IAP_CONST_FW_CONFIG_ADDRESS;
+
+		OS_ASSERT(flash_erase_sector(IAP_CONST_FW_ADDRESS_START_SECTOR, IAP_CONST_FW_ADDRESS_SECTOR_NUMBER) == 0);
+
+		debug("iap_app_config->app_valid: %p", &iap_app_config->app_valid);
+		debug("iap_fw_config->fw_valid: %p", &iap_fw_config->fw_valid);
+		OS_ASSERT(iap_app_config->app_valid == 0xff);
+		OS_ASSERT(iap_fw_config->fw_valid == 0xff);
+
+		OS_ASSERT(set_app_valid(1) == 0);
+		OS_ASSERT(set_firmware_valid(1) == 0);
+		OS_ASSERT(iap_app_config->app_valid == 1);
+		OS_ASSERT(iap_fw_config->fw_valid == 1);
+	}
 }
 
 static server_item_t server_map[] = {
@@ -482,12 +555,12 @@ static server_item_t server_map[] = {
 	{3, fn3},
 	{4, fn4},
 	{5, fn5},
+	{6, fn6},
 	{7, fn7},
 	{8, fn8},
 	{9, fn9},
 	{10, fn10},
-	{12, fn12},
-	{13, fn13},
+	{11, fn11},
 	{14, fn14},
 	{17, fn17},
 	{18, fn18},
