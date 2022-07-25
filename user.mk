@@ -6,7 +6,7 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2022年07月22日 星期五 16时18分25秒
+#   修改日期：2022年07月25日 星期一 14时26分33秒
 #   描    述：
 #
 #================================================================
@@ -23,6 +23,7 @@ USER_C_INCLUDES += -Iapps/modules/hardware
 USER_C_INCLUDES += -Iapps/modules/app
 USER_C_INCLUDES += -Iapps/modules/app/dau
 USER_C_INCLUDES += -Iapps/modules/app/power_modules
+USER_C_INCLUDES += -Iapps/modules/app/power_manager
 USER_C_INCLUDES += -Iapps/modules/app/ftpd
 USER_C_INCLUDES += -Iapps/modules/app/vfs_disk
 USER_C_INCLUDES += -Iapps/modules/app/net_client
@@ -79,11 +80,11 @@ USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_stategrid
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_yyln.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_winline.c
 USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_zte.c
+USER_C_SOURCES += apps/modules/app/power_manager/power_manager.c
+USER_C_SOURCES += apps/modules/app/power_manager/power_manager_handler_native.c
+USER_C_SOURCES += apps/modules/app/power_manager/power_manager_group_policy_dau.c
 USER_C_SOURCES += apps/modules/app/dau/channels.c
 USER_C_SOURCES += apps/modules/app/dau/channel.c
-USER_C_SOURCES += apps/modules/app/dau/power_manager.c
-USER_C_SOURCES += apps/modules/app/dau/power_manager_handler_native.c
-USER_C_SOURCES += apps/modules/app/dau/power_manager_group_policy_dau.c
 USER_C_SOURCES += apps/modules/app/dau/channel_record.c
 ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE),)
 USER_C_SOURCES += apps/modules/app/dau/channel_handler_proxy_remote.c
