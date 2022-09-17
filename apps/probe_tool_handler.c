@@ -6,7 +6,7 @@
  *   文件名称：probe_tool_handler.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 12时48分07秒
- *   修改日期：2022年07月22日 星期五 09时04分08秒
+ *   修改日期：2022年08月26日 星期五 09时52分12秒
  *   描    述：
  *
  *================================================================*/
@@ -71,7 +71,7 @@ static void fn2(request_t *request)
 			break;
 
 			case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
-				channel_info->channel_event_stop.stop_reason = CHANNEL_RECORD_ITEM_STOP_REASON_MANUAL;
+				channel_info->channel_event_stop.stop_reason = channel_record_item_stop_reason(MANUAL);
 			}
 			break;
 
@@ -479,7 +479,7 @@ static void fn14(request_t *request)
 			break;
 
 			case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
-				channel_info->channel_event_stop.stop_reason = CHANNEL_RECORD_ITEM_STOP_REASON_MANUAL;
+				channel_info->channel_event_stop.stop_reason = channel_record_item_stop_reason(MANUAL);
 			}
 			break;
 

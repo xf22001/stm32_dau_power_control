@@ -40,6 +40,7 @@ USER_C_SOURCES += apps/can_config.c
 USER_C_SOURCES += apps/storage_config.c
 USER_C_SOURCES += apps/modbus_addr_handler.c
 USER_C_SOURCES += apps/display_cache.c
+USER_C_SOURCES += apps/power_manager_group_policy_config.c
 USER_C_SOURCES += apps/gpio_map.c
 
 
