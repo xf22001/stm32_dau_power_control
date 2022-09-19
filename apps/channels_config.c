@@ -6,7 +6,7 @@
  *   文件名称：channels_config.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分44秒
- *   修改日期：2022年02月16日 星期三 15时13分02秒
+ *   修改日期：2022年09月19日 星期一 14时24分54秒
  *   描    述：
  *
  *================================================================*/
@@ -59,15 +59,15 @@ static channels_config_t channels_config_0 = {
 	.channel_config = NULL,
 	.power_module_config = {
 		.hcan = &hcan2,
-		.power_module_default_type = POWER_MODULE_TYPE_PSEUDO,
+		.power_module_default_type = POWER_MODULE_TYPE_STATEGRID,
 	},
 	.power_manager_config = {
 		.power_manager_default_type = POWER_MANAGER_TYPE_NATIVE,
 		.hcan_relay_board = &hcan1,
 	},
 	.display_config = {
-		//.station = 1,
-		//.huart = &huart6,
+		.station = 1,
+		.huart = &huart6,
 	},
 	.proxy_channel_info = {
 		.hcan = &hcan1,
