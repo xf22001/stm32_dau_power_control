@@ -6,7 +6,7 @@
  *   文件名称：modbus_addr_handler.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月17日 星期五 10时13分49秒
- *   修改日期：2022年07月19日 星期二 16时34分14秒
+ *   修改日期：2022年08月05日 星期五 22时18分17秒
  *   描    述：
  *
  *================================================================*/
@@ -786,57 +786,57 @@ void channels_modbus_data_action(void *fn_ctx, void *chain_ctx)
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP_NUMBER: {
-			modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_number);
+			modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_number);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP1_CHANNEL_NUMBER: {
-			modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_settings[0].channel_number);
+			modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_settings[0].channel_number);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP1_RELAY_BOARD_NUMBER_PER_CHANNEL: {
-			//modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[0].relay_board_number_per_channel);
+			//modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[0].relay_board_number_per_channel);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP1_RELAY_BOARD1_MODULE_NUMBER_PER_CHANNEL: {
-			//modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[0].power_module_group_number_per_relay_board[0]);
+			//modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[0].power_module_group_number_per_relay_board[0]);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP1_RELAY_BOARD2_MODULE_NUMBER_PER_CHANNEL: {
-			//modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[0].power_module_group_number_per_relay_board[1]);
+			//modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[0].power_module_group_number_per_relay_board[1]);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP1_POWER_MODULE_NUMBER_PER_POWER_MODULE_GROUP: {
-			modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_settings[0].power_module_group_settings[0].power_module_number);
+			modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_settings[0].power_module_group_settings[0].power_module_number);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP2_CHANNEL_NUMBER: {
-			modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_settings[1].channel_number);
+			modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_settings[1].channel_number);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP2_RELAY_BOARD_NUMBER_PER_CHANNEL: {
-			//modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[1].relay_board_number_per_channel);
+			//modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[1].relay_board_number_per_channel);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP2_RELAY_BOARD1_MODULE_NUMBER_PER_CHANNEL: {
-			//modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[1].power_module_group_number_per_relay_board[0]);
+			//modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[1].power_module_group_number_per_relay_board[0]);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP2_RELAY_BOARD2_MODULE_NUMBER_PER_CHANNEL: {
-			//modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[1].power_module_group_number_per_relay_board[1]);
+			//modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.pdu_config.pdu_group_config[1].power_module_group_number_per_relay_board[1]);
 		}
 		break;
 
 		case MODBUS_ADDR_PDU_GROUP2_POWER_MODULE_NUMBER_PER_POWER_MODULE_GROUP: {
-			modbus_data_value_rw(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_settings[0].power_module_group_settings[1].power_module_number);
+			modbus_data_value_r(modbus_data_ctx, channels_info->channels_settings.power_manager_settings.power_manager_group_settings[0].power_module_group_settings[1].power_module_number);
 		}
 		break;
 
@@ -937,10 +937,12 @@ void channels_modbus_data_action(void *fn_ctx, void *chain_ctx)
 		break;
 
 		case MODBUS_ADDR_RESTORE_SETTINGS: {
-			app_set_reset_config();
-			app_save_config();
-			debug("reset config ...");
-			HAL_NVIC_SystemReset();
+			if(modbus_data_ctx->action == MODBUS_DATA_ACTION_SET) {
+				app_set_reset_config();
+				app_save_config();
+				debug("reset config ...");
+				HAL_NVIC_SystemReset();
+			}
 		}
 		break;
 
@@ -977,6 +979,48 @@ void channels_modbus_data_action(void *fn_ctx, void *chain_ctx)
 		case MODBUS_ADDR_EXCEPTION_ASSERT_FAILED_LINE: {
 			app_info_t *app_info = get_app_info();
 			modbus_data_value_r(modbus_data_ctx, app_info->display_cache_app.assert_fail_location.line);
+		}
+		break;
+
+		case MODBUS_ADDR_PDU_GROUP_0_CHANGE_STATE: {
+			power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+			power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + 0;
+			modbus_data_value_r(modbus_data_ctx, power_manager_group_info->change_state);
+		}
+		break;
+
+		case MODBUS_ADDR_PDU_GROUP_0_RELAY_ID: {
+			power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+			power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + 0;
+			modbus_data_value_r(modbus_data_ctx, power_manager_group_info->error_relay_id);
+		}
+		break;
+
+		case MODBUS_ADDR_PDU_GROUP_0_CONTROL_STATE: {
+			power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+			power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + 0;
+			modbus_data_value_r(modbus_data_ctx, power_manager_group_info->error_relay_control_state);
+		}
+		break;
+
+		case MODBUS_ADDR_PDU_GROUP_1_CHANGE_STATE: {
+			power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+			power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + 1;
+			modbus_data_value_r(modbus_data_ctx, power_manager_group_info->change_state);
+		}
+		break;
+
+		case MODBUS_ADDR_PDU_GROUP_1_RELAY_ID: {
+			power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+			power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + 1;
+			modbus_data_value_r(modbus_data_ctx, power_manager_group_info->error_relay_id);
+		}
+		break;
+
+		case MODBUS_ADDR_PDU_GROUP_1_CONTROL_STATE: {
+			power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+			power_manager_group_info_t *power_manager_group_info = power_manager_info->power_manager_group_info + 1;
+			modbus_data_value_r(modbus_data_ctx, power_manager_group_info->error_relay_control_state);
 		}
 		break;
 
