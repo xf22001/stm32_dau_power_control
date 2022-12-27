@@ -6,7 +6,7 @@
  *   文件名称：probe_tool_handler.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 12时48分07秒
- *   修改日期：2022年08月26日 星期五 09时52分12秒
+ *   修改日期：2022年11月04日 星期五 14时10分24秒
  *   描    述：
  *
  *================================================================*/
@@ -95,7 +95,7 @@ static void fn2(request_t *request)
 			debug("send channel %d type %d successful!", channel_id, type);
 		}
 	} else {
-		_hexdump("fn2 content", content, request->header.data_size);
+		_hexdumpf(content, request->header.data_size, "%s", __func__);
 	}
 }
 
@@ -116,11 +116,6 @@ static void fn3(request_t *request)
 			return;
 		}
 
-		if(set_firmware_valid(0) != 0) {
-			debug("");
-			return;
-		}
-
 		_printf("reset to bootloader!\n");
 
 		HAL_NVIC_SystemReset();
@@ -128,14 +123,14 @@ static void fn3(request_t *request)
 	}
 
 	if(stage == 0) {
-		OS_ASSERT(flash_erase_sector(IAP_CONST_FW_ADDRESS_START_SECTOR, IAP_CONST_FW_ADDRESS_SECTOR_NUMBER) == 0);
+		OS_ASSERT(flash_erase_sector(IAP_CONST_APP_ADDRESS_START_SECTOR, IAP_CONST_APP_ADDRESS_SECTOR_NUMBER) == 0);
 	} else if(stage == 1) {
 		if(data_size == 4) {
 			uint32_t *p = (uint32_t *)data;
 			file_crc32 = *p;
 		}
 	} else if(stage == 2) {
-		flash_write(IAP_CONST_FW_ADDRESS + data_offset, data, data_size);
+		flash_write(IAP_CONST_APP_ADDRESS + data_offset, data, data_size);
 
 		if(data_offset + data_size == total_size) {
 			uint32_t read_offset = 0;
@@ -145,7 +140,7 @@ static void fn3(request_t *request)
 				uint32_t i;
 				uint32_t left = total_size - read_offset;
 				uint32_t read_size = (left > 32) ? 32 : left;
-				uint8_t *read_buffer = (uint8_t *)(IAP_CONST_FW_ADDRESS + read_offset);
+				uint8_t *read_buffer = (uint8_t *)(IAP_CONST_APP_ADDRESS + read_offset);
 
 				for(i = 0; i < read_size; i++) {
 					crc32 += read_buffer[i];
@@ -166,27 +161,16 @@ static void fn3(request_t *request)
 
 	if(start_upgrade_app != 0) {
 		iap_app_config_t *iap_app_config = (iap_app_config_t *)IAP_CONST_APP_CONFIG_ADDRESS;
-		iap_fw_config_t *iap_fw_config = (iap_fw_config_t *)IAP_CONST_FW_CONFIG_ADDRESS;
 
 		_printf("start upgrade app!\n");
 
 		OS_ASSERT(iap_app_config->app_valid == 0xff);
-		OS_ASSERT(iap_fw_config->fw_valid == 0xff);
-
-		if(set_firmware_size(total_size) != 0) {
-			debug("");
-		}
-
-		if(set_firmware_valid(1) != 0) {
-			debug("");
-		}
 
 		if(set_app_valid(1) != 0) {
 			debug("");
 		}
 
 		OS_ASSERT(iap_app_config->app_valid == 1);
-		OS_ASSERT(iap_fw_config->fw_valid == 1);
 
 		HAL_NVIC_SystemReset();
 	}
@@ -244,7 +228,7 @@ static void get_host_by_name(char *content, uint32_t size)
 	int fn;
 	int catched;
 
-	//_hexdump("content", (const char *)content, size);
+	_hexdumpf(content, size, "%s", __func__);
 
 	if(hostname == NULL) {
 		return;
@@ -341,7 +325,20 @@ static void fn5(request_t *request)
 
 static void fn6(request_t *request)
 {
-	start_dump_channels_stats();
+	int ret;
+	char *content = (char *)(request + 1);
+	int fn;
+	int type;
+	int catched;
+
+	ret = sscanf(content, "%d %d%n", &fn, &type, &catched);
+
+	if(ret == 2) {
+		debug("fn:%d, type:%d!", fn, type);
+		start_dump_channels_stats(type);
+	} else {
+		_hexdumpf(content, request->header.data_size, "%s", __func__);
+	}
 }
 
 static void fn7(request_t *request)
@@ -355,7 +352,6 @@ static void fn7(request_t *request)
 	int channel;
 	int voltage;
 	int current;
-	int state;
 	int catched;
 	uint32_t ticks = osKernelSysTick();
 
@@ -369,12 +365,12 @@ static void fn7(request_t *request)
 		return;
 	}
 
-	ret = sscanf(content, "%d %d %d %d %d%n", &fn, &channel, &voltage, &current, &state, &catched);
+	ret = sscanf(content, "%d %d %d %d%n", &fn, &channel, &voltage, &current, &catched);
 
-	if(ret == 5) {
-		debug("fn:%d, channel:%d, voltage:%d, current:%d, state:%d!", fn, channel, voltage, current, state);
+	if(ret == 4) {
+		debug("fn:%d, channel:%d, voltage:%d, current:%d!", fn, channel, voltage, current);
 	} else {
-		_hexdump("fn7 content", content, request->header.data_size);
+		_hexdumpf(content, request->header.data_size, "%s", __func__);
 	}
 
 	if(channel >= channels_info->channel_number) {
@@ -429,7 +425,7 @@ static void fn11(request_t *request)
 	if(ret == 4) {
 		debug("fn:%d, addr:%d, value:%d, op:%d!", fn, addr, value, op);
 	} else {
-		_hexdump("fn11 content", content, request->header.data_size);
+		_hexdumpf(content, request->header.data_size, "%s", __func__);
 		return;
 	}
 
@@ -533,19 +529,14 @@ static void fn18(request_t *request)
 
 	if(ret == 1) {
 		iap_app_config_t *iap_app_config = (iap_app_config_t *)IAP_CONST_APP_CONFIG_ADDRESS;
-		iap_fw_config_t *iap_fw_config = (iap_fw_config_t *)IAP_CONST_FW_CONFIG_ADDRESS;
 
-		OS_ASSERT(flash_erase_sector(IAP_CONST_FW_ADDRESS_START_SECTOR, IAP_CONST_FW_ADDRESS_SECTOR_NUMBER) == 0);
+		OS_ASSERT(flash_erase_sector(IAP_CONST_APP_ADDRESS_START_SECTOR, IAP_CONST_APP_ADDRESS_SECTOR_NUMBER) == 0);
 
 		debug("iap_app_config->app_valid: %p", &iap_app_config->app_valid);
-		debug("iap_fw_config->fw_valid: %p", &iap_fw_config->fw_valid);
 		OS_ASSERT(iap_app_config->app_valid == 0xff);
-		OS_ASSERT(iap_fw_config->fw_valid == 0xff);
 
 		OS_ASSERT(set_app_valid(1) == 0);
-		OS_ASSERT(set_firmware_valid(1) == 0);
 		OS_ASSERT(iap_app_config->app_valid == 1);
-		OS_ASSERT(iap_fw_config->fw_valid == 1);
 	}
 }
 

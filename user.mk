@@ -84,12 +84,17 @@ USER_C_SOURCES += apps/modules/app/power_modules/power_modules_handler_zte.c
 USER_C_SOURCES += apps/modules/app/power_manager/power_manager.c
 USER_C_SOURCES += apps/modules/app/power_manager/power_manager_handler_native.c
 USER_C_SOURCES += apps/modules/app/power_manager/power_manager_group_policy_dau.c
+USER_C_SOURCES += apps/modules/app/dau/channels_config_helper.c
 USER_C_SOURCES += apps/modules/app/dau/channels.c
 USER_C_SOURCES += apps/modules/app/dau/channel.c
 USER_C_SOURCES += apps/modules/app/dau/channel_record.c
 ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE),)
 USER_C_SOURCES += apps/modules/app/dau/channel_handler_proxy_remote.c
+ifneq ($(call ifdef_any_of,PSEUDO_ENV),)
+USER_C_SOURCES += apps/modules/app/dau/channels_comm_proxy_remote_pseudo.c
+else
 USER_C_SOURCES += apps/modules/app/dau/channels_comm_proxy_remote.c
+endif
 USER_C_SOURCES += apps/modules/app/dau/relay_boards_comm_proxy_remote.c
 endif
 ifneq ($(call ifdef_any_of,CHARGER_CHANNEL_PROXY_REMOTE CHARGER_CHANNEL_PROXY_LOCAL),)
