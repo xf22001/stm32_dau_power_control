@@ -6,7 +6,7 @@
  *   文件名称：channels_config.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分44秒
- *   修改日期：2022年12月28日 星期三 16时07分12秒
+ *   修改日期：2022年12月28日 星期三 16时47分12秒
  *   描    述：
  *
  *================================================================*/
@@ -40,8 +40,16 @@ static channels_config_t channels_config_0 = {
 		.hcan = &hcan2,
 	},
 
+	.force_stop_port = in_4_GPIO_Port,
+	.force_stop_pin = in_4_Pin,
+	.force_stop_normal_state = GPIO_PIN_RESET,
+
 	.fan_port = fan_GPIO_Port,
 	.fan_pin = fan_Pin,
+
+	.door_port = in_2_GPIO_Port,
+	.door_pin = in_2_Pin,
+	.door_normal_state = GPIO_PIN_RESET,
 };
 
 static channels_config_t *channels_config_sz[] = {
