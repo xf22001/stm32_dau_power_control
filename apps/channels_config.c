@@ -6,7 +6,7 @@
  *   文件名称：channels_config.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分44秒
- *   修改日期：2022年12月27日 星期二 09时35分33秒
+ *   修改日期：2022年12月28日 星期三 11时25分20秒
  *   描    述：
  *
  *================================================================*/
@@ -16,7 +16,7 @@
 
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
-extern UART_HandleTypeDef huart6;
+extern UART_HandleTypeDef huart1;
 extern SPI_HandleTypeDef hspi3;
 
 static channels_config_t channels_config_0 = {
@@ -24,19 +24,19 @@ static channels_config_t channels_config_0 = {
 	.channel_number = 0,
 	.channel_config = NULL,
 	.power_module_config = {
-		.hcan = &hcan2,
+		.hcan = &hcan1,
 		.power_module_default_type = POWER_MODULE_TYPE_STATEGRID,
 	},
 	.power_manager_config = {
 		.power_manager_default_type = POWER_MANAGER_TYPE_NATIVE,
-		.hcan_relay_board = &hcan1,
+		.hcan_relay_board = &hcan2,
 	},
 	.display_config = {
 		.station = 1,
-		.huart = &huart6,
+		.huart = &huart1,
 	},
 	.proxy_channel_info = {
-		.hcan = &hcan1,
+		.hcan = &hcan2,
 	},
 };
 
