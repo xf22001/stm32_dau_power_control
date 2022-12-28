@@ -6,7 +6,7 @@
  *   文件名称：modbus_addr_handler.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月17日 星期五 10时13分49秒
- *   修改日期：2022年08月05日 星期五 22时18分17秒
+ *   修改日期：2022年12月28日 星期三 15时00分11秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,7 @@
 #include "modbus_data_value.h"
 #include "modbus_slave_txrx.h"
 #include "channels_comm_proxy_remote.h"
+#include "relay_boards_comm_proxy_remote.h"
 
 #include "log.h"
 
@@ -636,57 +637,59 @@ static uint16_t get_channnel_info_by_id_field(channels_info_t *channels_info, ui
 	}
 }
 
-//static uint16_t get_relay_board_info_by_id_field(channels_info_t *channels_info, uint8_t board_id, uint8_t field)
-//{
-//	relay_board_item_info_t *relay_board_item_info = channels_info->relay_board_item_info + board_id;
-//
-//	if(board_id >= channels_info->relay_board_item_number) {
-//		return 0xffff;
-//	}
-//
-//	switch(field) {
-//		case RELAY_BOARD_FIELD_TYPE_CHANNEL_ID: {
-//			return relay_board_item_info->channel_id;
-//		}
-//		break;
-//
-//		case RELAY_BOARD_FIELD_TYPE_CONFIG: {
-//			return relay_board_item_info->config;
-//		}
-//		break;
-//
-//		case RELAY_BOARD_FIELD_TYPE_WORK_STATE: {
-//			return relay_board_item_info->remote_config;
-//		}
-//		break;
-//
-//		case RELAY_BOARD_FIELD_TYPE_OFFSET: {
-//			return relay_board_item_info->offset;
-//		}
-//		break;
-//
-//		case RELAY_BOARD_FIELD_TYPE_NUMBER: {
-//			return relay_board_item_info->number;
-//		}
-//		break;
-//
-//		case RELAY_BOARD_FIELD_TYPE_CONNECT_STATE: {
-//			return relay_board_item_info->connect_state;
-//		}
-//		break;
-//
-//		case RELAY_BOARD_FIELD_TYPE_FAULT: {
-//			uint8_t fault = *relay_board_item_info->faults->data;
-//			return fault;
-//		}
-//		break;
-//
-//		default: {
-//			return 0xffff;
-//		}
-//		break;
-//	}
-//}
+static uint16_t get_relay_board_info_by_id_field(channels_info_t *channels_info, uint8_t board_id, uint8_t field)
+{
+	power_manager_info_t *power_manager_info = (power_manager_info_t *)channels_info->power_manager_info;
+	power_manager_relay_board_info_t *power_manager_relay_board_info = power_manager_info->power_manager_relay_board_info + board_id;
+	power_manager_channel_info_t *power_manager_channel_info = (power_manager_channel_info_t *)power_manager_relay_board_info->power_manager_channel_info;
+
+	if(board_id >= channels_info->relay_board_number) {
+		return 0xffff;
+	}
+
+	switch(field) {
+		case RELAY_BOARD_FIELD_TYPE_CHANNEL_ID: {
+			return power_manager_channel_info->id;
+		}
+		break;
+
+		case RELAY_BOARD_FIELD_TYPE_CONFIG: {
+			return power_manager_relay_board_info->config;
+		}
+		break;
+
+		case RELAY_BOARD_FIELD_TYPE_WORK_STATE: {
+			return power_manager_relay_board_info->remote_config;
+		}
+		break;
+
+		case RELAY_BOARD_FIELD_TYPE_OFFSET: {
+			return power_manager_relay_board_info->offset;
+		}
+		break;
+
+		case RELAY_BOARD_FIELD_TYPE_NUMBER: {
+			return power_manager_relay_board_info->number;
+		}
+		break;
+
+		case RELAY_BOARD_FIELD_TYPE_CONNECT_STATE: {
+			return relay_boards_comm_proxy_get_connect_state(channels_info, board_id);
+		}
+		break;
+
+		case RELAY_BOARD_FIELD_TYPE_FAULT: {
+			uint8_t fault = *power_manager_relay_board_info->faults->data;
+			return fault;
+		}
+		break;
+
+		default: {
+			return 0xffff;
+		}
+		break;
+	}
+}
 
 void channels_modbus_data_action(void *fn_ctx, void *chain_ctx)
 {
@@ -781,7 +784,7 @@ void channels_modbus_data_action(void *fn_ctx, void *chain_ctx)
 			//      "unknow",
 			//      relay_board_enum_info.id,
 			//      get_relay_board_field_type_des(relay_board_enum_info.field));
-			//modbus_data_value_r(modbus_data_ctx, get_relay_board_info_by_id_field(channels_info, relay_board_enum_info.id, relay_board_enum_info.field));
+			modbus_data_value_r(modbus_data_ctx, get_relay_board_info_by_id_field(channels_info, relay_board_enum_info.id, relay_board_enum_info.field));
 		}
 		break;
 

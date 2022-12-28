@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：power_manager_group_policy_config.c
  *   创 建 者：肖飞
  *   创建日期：2022年07月22日 星期五 12时30分44秒
- *   修改日期：2022年09月19日 星期一 14时23分33秒
+ *   修改日期：2022年12月28日 星期三 16时05分22秒
  *   描    述：
  *
  *================================================================*/
@@ -79,4 +79,38 @@ void channel_info_reset_default_config(channel_info_t *channel_info)
 	channel_settings->min_output_voltage = 500;
 	channel_settings->max_output_current = 2500;
 	channel_settings->min_output_current = 5;
+}
+
+static uint32_t power_supply_alive_stamp_1;
+static uint32_t power_supply_alive_stamp_2;
+
+void update_channel_charger_connected_state(uint8_t channel_id)
+{
+	if((channel_id >= 0) && (channel_id <= 5)) {
+		power_supply_alive_stamp_1 = osKernelSysTick();
+	} else if((channel_id >= 6) && (channel_id <= 11)) {
+		power_supply_alive_stamp_2 = osKernelSysTick();
+	}
+}
+
+void handle_channel_charger_connected_state(void)
+{
+	uint32_t ticks = osKernelSysTick();
+	GPIO_PinState power_supply;
+
+	power_supply = GPIO_PIN_SET;
+
+	if(ticks_duration(ticks, power_supply_alive_stamp_1) > 5 * 1000) {
+		power_supply = GPIO_PIN_RESET;
+	}
+
+	HAL_GPIO_WritePin(relay_4_GPIO_Port, relay_4_Pin, power_supply);
+
+	power_supply = GPIO_PIN_SET;
+
+	if(ticks_duration(ticks, power_supply_alive_stamp_2) > 5 * 1000) {
+		power_supply = GPIO_PIN_RESET;
+	}
+
+	HAL_GPIO_WritePin(out_7_GPIO_Port, out_7_Pin, power_supply);
 }
